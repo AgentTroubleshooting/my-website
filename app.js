@@ -24,11 +24,13 @@ const DRAFTS_KEY = 'seoudi_drafts_v1';
    بيانات العميل لعرضها في الخلاصة
    ========================= */
 const FIELDS = {
-  custNumber:   () => document.getElementById('custNumber')?.value?.trim() || '',
-  orderNumber:  () => document.getElementById('orderNumber')?.value?.trim() || '',
-  orderCreated: () => document.getElementById('orderCreated')?.value?.trim() || '',
-  receiptNumber:() => document.getElementById('receiptNumber')?.value?.trim() || '',
-  productName:  () => document.getElementById('productName')?.value?.trim() || '',
+  custNumber:    () => document.getElementById('custNumber')?.value?.trim() || '',
+  callerNumber:  () => document.getElementById('callerNumber')?.value?.trim() || '',   // رقم تواصل آخر (جديد)
+  orderNumber:   () => document.getElementById('orderNumber')?.value?.trim() || '',
+  orderCreated:  () => document.getElementById('orderCreated')?.value?.trim() || '',
+  receiptNumber: () => document.getElementById('receiptNumber')?.value?.trim() || '',
+  productName:   () => document.getElementById('productName')?.value?.trim() || '',
+  otherNotes:    () => document.getElementById('otherNotes')?.value?.trim() || '',      // ملاحظات أخرى (جديد)
 };
 
 /* ======= Validation Config + helpers ======= */
@@ -119,11 +121,15 @@ function buildCopyText(){
   const SEP = '----------------------------------------';
   const data = [
     ['Customer Number', FIELDS.custNumber()],
+    ['Another Mobile Number', FIELDS.callerNumber()],
     ['Order Number', FIELDS.orderNumber()],
     ['Order Created from FL', FIELDS.orderCreated()],
     ['Receipt Number', FIELDS.receiptNumber()],
     ['Product', FIELDS.productName()],
   ].filter(([k,v])=>!!v);
+
+  const notes = FIELDS.otherNotes();
+  if (notes) data.push(['Other Notes', notes]);
 
   const steps = [];
   if(state.type==='pq'){
@@ -170,7 +176,7 @@ function buildCopyText(){
     lines.push('');
     lines.push(SEP);
     lines.push('');
-    lines.push('خطوات التتبّع:');
+    lines.push('الخطوات المتبعه:'); // تغيير التسمية
     steps.forEach(s=> lines.push(s));
   }
   if(reqs.length){
@@ -209,11 +215,16 @@ function renderMiniSummary(){
 
   const data = [
     ['Customer Number', FIELDS.custNumber()],
+    ['Another Mobile Number', FIELDS.callerNumber()],
     ['Order Number', FIELDS.orderNumber()],
     ['Order Created from FL', FIELDS.orderCreated()],
     ['Receipt Number', FIELDS.receiptNumber()],
     ['Product', FIELDS.productName()],
   ].filter(([k,v])=>!!v);
+
+  const notes = FIELDS.otherNotes();
+  if (notes) data.push(['Other Notes', notes]);
+
   if(data.length){
     html += '<div class="mini-section is-data"><strong>بيانات الشكوى:</strong><ul>';
     data.forEach(([k,v])=> html += `<li>${k}: ${esc(v)}</li>`); html += '</ul></div>';
@@ -251,7 +262,7 @@ function renderMiniSummary(){
   }
 
   if(steps.length){
-    html += '<div class="mini-section is-steps"><strong>خطوات التتبّع:</strong><ul>';
+    html += '<div class="mini-section is-steps"><strong>الخطوات المتبعه:</strong><ul>';
     steps.forEach(s=> html += `<li>${esc(s)}</li>`); html += '</ul></div>';
   }
 
@@ -267,8 +278,6 @@ function renderMiniSummary(){
    جودة المنتج (Product Quality)
    ========================= */
 const PQ_CASES = [
-  {id:'appliances', label:'أجهزة منزلية',  type:'instant', sub:'أجهزة منزلية'},
-  {id:'hotfood',    label:'هوت فوود',      type:'instant', sub:'HotFood - Product Quality'},
   {id:'taswiya',    label:'تسوية',         type:'taswiya', sub:'تسوية'},
   {id:'fat',        label:'دهون زائدة',    type:'flow',    sub:'دهون زائدة'},
   {id:'taste',      label:'رائحة و طعم و لون', type:'flow', sub:'رائحة و طعم و لون'},
@@ -281,6 +290,8 @@ const PQ_CASES = [
   {id:'salty',      label:'ملح زائد',       type:'flow',    sub:'ملح زائد'},
   {id:'expired',    label:'منتهي الصلاحية', type:'flow',    sub:'منتهي الصلاحية'},
   {id:'hyg',        label:'هايجين "نظافة عامة"', type:'flow', sub:'هايجين "نظافة عامة"'},
+  {id:'appliances', label:'أجهزة منزلية',  type:'instant', sub:'أجهزة منزلية'},
+  {id:'hotfood',    label:'هوت فوود',      type:'instant', sub:'HotFood - Product Quality'},
 ];
 function pqClass(sub){ return `Complaint – Product Quality – ${sub}`; }
 function replaceTextFor(caseId){
@@ -639,7 +650,7 @@ function buildMissing(){
 }
 
 /* =========================
-   خطأ فردي (WT) — مُحدّث حسب المطلوب
+   خطأ فردي (WT)
    ========================= */
 function buildWT(){
   state.type='wt';
@@ -680,7 +691,6 @@ function buildWT(){
 
             if(c.value==='branch'){ addResult('Complaint Wrong Transaction – chef – less quantity'); return; }
 
-            // ديليفري → طريقة الدفع
             const qPay = radioQuestion({
               title:'هل طريقة الدفع',
               name:'wtPay',
@@ -694,7 +704,6 @@ function buildWT(){
                 wipe(state.wt,['kind','invoiced','abd','rr']);
                 state.wt.pay = (pp.value==='prepaid')?'دفع مسبق "Online Payment"':'كاش - فيزا'; renderMiniSummary();
 
-                // Online Payment: اختيارات المنتج 3
                 if(pp.value==='prepaid'){
                   const qKindP = radioQuestion({
                     title:'هل المنتج',
@@ -721,7 +730,6 @@ function buildWT(){
                   return;
                 }
 
-                // Cash/Visa
                 const qKindC = radioQuestion({
                   title:'هل منتج:',
                   name:'wtKindC',
@@ -794,7 +802,6 @@ function buildWT(){
                       return;
                     }
 
-                    // منتجات أخري
                     const qInvOther = radioQuestion({
                       title:'هل تم المحاسبة في الفاتورة على الكمية كاملة؟',
                       name:'wtInvOther',
@@ -882,7 +889,6 @@ function buildWT(){
               wipe(state.wt,['kind','invoiced','abd','rr']);
               state.wt.pay = (pp.value==='prepaid')?'دفع مسبق "Online Payment"':'كاش - فيزا'; renderMiniSummary();
 
-              // Online
               if(pp.value==='prepaid'){
                 const qKindCP = radioQuestion({
                   title:'هل المنتج',
@@ -909,7 +915,6 @@ function buildWT(){
                 return;
               }
 
-              // Cash
               const qKindCC = radioQuestion({
                 title:'هل منتج:',
                 name:'wtKindCC',
@@ -956,7 +961,6 @@ function buildWT(){
                     return;
                   }
 
-                  // منتجات أخرى: يُسأل عن الفاتورة + الإجراء (القرار بناءً على الإجراء)
                   const qInvOtherC = radioQuestion({
                     title:'هل تم المحاسبة في الفاتورة على الكمية كاملة؟',
                     name:'wtInvOtherC',
@@ -1034,7 +1038,7 @@ function buildDelay(){
    إنهاء الشكوى + Reset
    ========================= */
 function clearComplaintInputs(){
-  ['custNumber','orderNumber','orderCreated','receiptNumber','productName'].forEach(id=>{
+  ['custNumber','callerNumber','orderNumber','orderCreated','receiptNumber','productName','otherNotes'].forEach(id=>{
     const el = document.getElementById(id);
     if(el){ el.value=''; el.classList.remove('invalid'); }
   });
@@ -1172,12 +1176,32 @@ btnSave && btnSave.addEventListener('click', ()=>{
 })();
 
 /* =========================
+   تحديث الخلاصة أثناء الكتابة + تقييد أرقام الهاتف
+   ========================= */
+['custNumber','callerNumber','orderNumber','orderCreated','receiptNumber','productName','otherNotes'].forEach(id=>{
+  const el = document.getElementById(id);
+  if(!el) return;
+  el.addEventListener('input', ()=>{
+    if(el.value?.trim()) el.classList.remove('invalid');
+    renderMiniSummary();
+  });
+});
+function enforcePhone11(el){
+  if(!el) return;
+  el.addEventListener('input', ()=>{
+    el.value = (el.value || '').replace(/\D/g,'').slice(0,11);
+  });
+}
+enforcePhone11(document.getElementById('custNumber'));
+enforcePhone11(document.getElementById('callerNumber'));
+
+/* =========================
    Drafts: حفظ/عرض/بحث/حذف (كلها آمنة لو مفيش عناصر Drafts)
    ========================= */
 function readDrafts(){ try{ return JSON.parse(localStorage.getItem(DRAFTS_KEY) || '[]'); } catch{ return []; } }
 function writeDrafts(list){ try{ localStorage.setItem(DRAFTS_KEY, JSON.stringify(list)); }catch{} }
 function formatTS(ts){
-  try{ return new Date(ts).toLocaleString('ar-EG', { dateStyle:'short', timeStyle:'short' }); }
+  try{ return new Date(ts).toLocaleString('en-GB', { dateStyle:'short', timeStyle:'short' }); } // إنجليزي
   catch{ return ts; }
 }
 function currentResultsArray(){
@@ -1190,10 +1214,12 @@ function saveCurrentDraft(){
     customer: FIELDS.custNumber(),
     fields: {
       custNumber: FIELDS.custNumber(),
+      callerNumber: FIELDS.callerNumber(),
       orderNumber: FIELDS.orderNumber(),
       orderCreated: FIELDS.orderCreated(),
       receiptNumber: FIELDS.receiptNumber(),
       productName: FIELDS.productName(),
+      otherNotes: FIELDS.otherNotes(),
     },
     type: state.type,
     state: JSON.parse(JSON.stringify(state)),
@@ -1253,7 +1279,7 @@ function loadDraftByIdFromURL(){
     if(!d){ showToast('لم يتم العثور على هذه المسودة.', 'error'); return; }
 
     resetAll();
-    ['custNumber','orderNumber','orderCreated','receiptNumber','productName'].forEach(k=>{
+    ['custNumber','callerNumber','orderNumber','orderCreated','receiptNumber','productName','otherNotes'].forEach(k=>{
       const el = document.getElementById(k); if(el) el.value = d.fields?.[k] ?? '';
     });
 
