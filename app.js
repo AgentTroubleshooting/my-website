@@ -21,47 +21,15 @@ const btnEnd  = document.getElementById('endBtn');
 const DRAFTS_KEY = 'seoudi_drafts_v1';
 
 /* =========================
-   بيانات العميل لعرضها في الخلاصة
+   “بيانات الشكوى” أتلغت — نحتفظ فقط بالملاحظات
    ========================= */
 const FIELDS = {
-  custNumber:    () => document.getElementById('custNumber')?.value?.trim() || '',
-  callerNumber:  () => document.getElementById('callerNumber')?.value?.trim() || '',   // رقم تواصل آخر (جديد)
-  orderNumber:   () => document.getElementById('orderNumber')?.value?.trim() || '',
-  orderCreated:  () => document.getElementById('orderCreated')?.value?.trim() || '',
-  receiptNumber: () => document.getElementById('receiptNumber')?.value?.trim() || '',
-  productName:   () => document.getElementById('productName')?.value?.trim() || '',
-  otherNotes:    () => document.getElementById('otherNotes')?.value?.trim() || '',      // ملاحظات أخرى (جديد)
+  otherNotes: () => document.getElementById('otherNotes')?.value?.trim() || '',
 };
 
-/* ======= Validation Config + helpers ======= */
-const REQUIRED_FIELDS_MODE = 'all'; // 'orderCreated' | 'all'
-
-const FIELD_MAP = {
-  custNumber:   { id:'custNumber',   label:'Customer Number' },
-  orderNumber:  { id:'orderNumber',  label:'Order Number' },
-  orderCreated: { id:'orderCreated', label:'Order Created from FL' },
-  receiptNumber:{ id:'receiptNumber',label:'Receipt Number' },
-  productName:  { id:'productName',  label:'Product' }
-};
-
-function getMissingFields(mode){
-  const keys = (mode==='all') ? Object.keys(FIELD_MAP) : ['orderCreated'];
-  const missing = []; const missingKeys=[];
-  keys.forEach(k=>{
-    const el = document.getElementById(FIELD_MAP[k].id);
-    const val = el?.value?.trim();
-    if(!val){ missing.push(FIELD_MAP[k].label); missingKeys.push(k); }
-  });
-  return {missing, missingKeys};
-}
-
-function markInvalidFields(keys, on=true){
-  keys.forEach(k=>{
-    const el = document.getElementById(FIELD_MAP[k].id);
-    if(!el) return;
-    el.classList.toggle('invalid', on);
-  });
-}
+/* ======= Validation (تعطيل التحقق القديم للحقول المحذوفة) ======= */
+function getMissingFields(){ return { missing:[], missingKeys:[] }; }
+function markInvalidFields(){ /* لم يعد مطلوبًا */ }
 function markInvalidEl(el, on=true){ if(el) el.classList.toggle('invalid', on); }
 
 /* ======= Toast ======= */
@@ -76,6 +44,17 @@ function showToast(msg, type='error'){
   toastTimer = setTimeout(()=>{ t.remove(); }, 3200);
 }
 
+/* ======= نص إضافي تلقائي عند أي "طلب جديد" (بِـ Bold/لون مميز للجملة المهمة) ======= */
+const APOLOGY_NOTE_HTML = `
+  <div>ونقول للعميل (<strong style="font-weight:700;color:#1a237e">بعتذر لحضرتك جداً عن أي مشكلة واجهتك، هيتم مراجعة الشكوى داخلياً من غير ما نزعج حضرتك</strong>)</div>
+  <div>وفي حالة إن العميل أصر على التواصل معاه من خلال قسم الشكاوى:</div>
+  <div>يتم توضيح ده في الـ Ticket بشكل واضح علشان يتم المتابعة من الفريق المختص.</div>
+`;
+function shouldAppendApology(text){
+  const t = (text || '').toLowerCase();
+  return t.includes('طلب جديد') || t.includes('new order');
+}
+
 /* ======= Utilities ======= */
 function show(el, on) { if(!el) return; el.style.display = on ? '' : 'none'; }
 function clear(el) { if(!el) return; el.innerHTML = ''; }
@@ -83,10 +62,20 @@ function esc(s=''){ return s.replace(/[&<>"']/g, m=>({ '&':'&amp;','<':'&lt;','>
 function addResult(text) {
   show(qaCard, true);
   show(document.getElementById('summaryCard'), true);
+
   const d = document.createElement('div');
   d.className = 'result';
   d.textContent = text;
   requiredEl.appendChild(d);
+
+  // لو السطر فيه "طلب جديد" نضيف رسالة الاعتذار المميزة تحته مباشرة
+  if (shouldAppendApology(text)) {
+    const ap = document.createElement('div');
+    ap.className = 'result';
+    ap.innerHTML = APOLOGY_NOTE_HTML;
+    requiredEl.appendChild(ap);
+  }
+
   renderMiniSummary();
 }
 function resetRequired() { clear(requiredEl); renderMiniSummary(); }
@@ -119,17 +108,11 @@ const wipe = (obj, keys)=> keys.forEach(k=> obj[k]=null);
 /* ======= Build copy text ======= */
 function buildCopyText(){
   const SEP = '----------------------------------------';
-  const data = [
-    ['Customer Number', FIELDS.custNumber()],
-    ['Another Mobile Number', FIELDS.callerNumber()],
-    ['Order Number', FIELDS.orderNumber()],
-    ['Order Created from FL', FIELDS.orderCreated()],
-    ['Receipt Number', FIELDS.receiptNumber()],
-    ['Product', FIELDS.productName()],
-  ].filter(([k,v])=>!!v);
 
+  // لم يعد هناك “الملاحظات” غير الملاحظات
+  const data = [];
   const notes = FIELDS.otherNotes();
-  if (notes) data.push(['Other Notes', notes]);
+  if (notes) data.push(['الملاحظات', notes]);
 
   const steps = [];
   if(state.type==='pq'){
@@ -169,14 +152,14 @@ function buildCopyText(){
 
   if(data.length){
     lines.push('');
-    lines.push('بيانات الشكوى:');
+    lines.push('الملاحظات:');
     data.forEach(([k,v])=> lines.push(`${k}: ${v}`));
   }
   if(steps.length){
     lines.push('');
     lines.push(SEP);
     lines.push('');
-    lines.push('الخطوات المتبعه:'); // تغيير التسمية
+    lines.push('الخطوات المتبعه:');
     steps.forEach(s=> lines.push(s));
   }
   if(reqs.length){
@@ -213,20 +196,13 @@ function renderMiniSummary(){
   if(!miniSummaryEl) return;
   let html = '<div class="mini-title">الخلاصة</div>';
 
-  const data = [
-    ['Customer Number', FIELDS.custNumber()],
-    ['Another Mobile Number', FIELDS.callerNumber()],
-    ['Order Number', FIELDS.orderNumber()],
-    ['Order Created from FL', FIELDS.orderCreated()],
-    ['Receipt Number', FIELDS.receiptNumber()],
-    ['Product', FIELDS.productName()],
-  ].filter(([k,v])=>!!v);
-
+  // لم يعد هناك بيانات غير الملاحظات
+  const data = [];
   const notes = FIELDS.otherNotes();
-  if (notes) data.push(['Other Notes', notes]);
+  if (notes) data.push(['الملاحظات', notes]);
 
   if(data.length){
-    html += '<div class="mini-section is-data"><strong>بيانات الشكوى:</strong><ul>';
+    html += '<div class="mini-section is-data"><strong>الملاحظات:</strong><ul>';
     data.forEach(([k,v])=> html += `<li>${k}: ${esc(v)}</li>`); html += '</ul></div>';
   }
 
@@ -278,25 +254,25 @@ function renderMiniSummary(){
    جودة المنتج (Product Quality)
    ========================= */
 const PQ_CASES = [
-  {id:'taswiya',    label:'تسوية',         type:'taswiya', sub:'تسوية'},
-  {id:'fat',        label:'دهون زائدة',    type:'flow',    sub:'دهون زائدة'},
-  {id:'taste',      label:'رائحة و طعم و لون', type:'flow', sub:'رائحة و طعم و لون'},
-  {id:'melted',     label:'سايح',          type:'flow',    sub:'سايح'},
-  {id:'impurities', label:'شوائب بالمنتج',  type:'flow',    sub:'شوائب بالمنتج'},
   {id:'mold',       label:'عفن',           type:'flow',    sub:'عفن'},
-  {id:'notfresh',   label:'غير طازج او فريش', type:'flow',  sub:'غير طازج غير فريش'},
+  {id:'hyg',        label:'هايجين "نظافة عامة"', type:'flow', sub:'هايجين "نظافة عامة"'},
+  {id:'impurities', label:'شوائب بالمنتج',  type:'flow',    sub:'شوائب بالمنتج'},
+  {id:'taste',      label:'رائحة و طعم و لون', type:'flow', sub:'رائحة و طعم و لون'},
   {id:'spoiled',    label:'فاسد',          type:'flow',    sub:'فاسد'},
   {id:'broken',     label:'مكسور/مدهوس/مفتوح', type:'flow', sub:'مكسور/ مدهوس / مفتوح'},
+  {id:'notfresh',   label:'غير طازج او فريش', type:'flow',  sub:'غير طازج غير فريش'},
+  {id:'melted',     label:'سايح',          type:'flow',    sub:'سايح'},
+  {id:'taswiya',    label:'تسوية',         type:'taswiya', sub:'تسوية'},
   {id:'salty',      label:'ملح زائد',       type:'flow',    sub:'ملح زائد'},
   {id:'expired',    label:'منتهي الصلاحية', type:'flow',    sub:'منتهي الصلاحية'},
-  {id:'hyg',        label:'هايجين "نظافة عامة"', type:'flow', sub:'هايجين "نظافة عامة"'},
+  {id:'fat',        label:'دهون زائدة',    type:'flow',    sub:'دهون زائدة'},
   {id:'appliances', label:'أجهزة منزلية',  type:'instant', sub:'أجهزة منزلية'},
   {id:'hotfood',    label:'هوت فوود',      type:'instant', sub:'HotFood - Product Quality'},
 ];
 function pqClass(sub){ return `Complaint – Product Quality – ${sub}`; }
 function replaceTextFor(caseId){
   const SAME = new Set(['mold','spoiled','hyg','expired']);
-  return SAME.has(caseId)?'عمل طلب جديد بنفس الكمية في الطلب الاساسي.':'عمل طلب جديد بباقي الكمية.';
+  return SAME.has(caseId)?'عمل طلب جديد بنفس الكمية في الطلب الاساسي.':'عمل طلب جديد بنفس الكمية في الطلب الاساسي.';
 }
 
 function buildPQ(){
@@ -650,7 +626,7 @@ function buildMissing(){
 }
 
 /* =========================
-   خطأ فردي (WT)
+   خطأ فردي (WT) — مُحدّث حسب المطلوب الأخير
    ========================= */
 function buildWT(){
   state.type='wt';
@@ -674,7 +650,7 @@ function buildWT(){
       state.wt.scenario = (r.value==='less')?'الحالة الأولى (كمية أقل)':'الحالة الثانية (عدم الالتزام بكومنت)';
       renderMiniSummary();
 
-      /* ===== الحالة الأولى: كمية أقل ===== */
+      /* ===== الحالة الأولى (وصول منتج بكميات أقل) ===== */
       if(r.value==='less'){
         const qClient = radioQuestion({
           title:'نوع العميل :',
@@ -689,8 +665,12 @@ function buildWT(){
             wipe(state.wt,['pay','kind','invoiced','abd','rr']);
             state.wt.client = (c.value==='branch')?'عميل فرع':'عميل ديليفري'; renderMiniSummary();
 
-            if(c.value==='branch'){ addResult('Complaint Wrong Transaction – chef – less quantity'); return; }
+            if(c.value==='branch'){
+              addResult('يتم عمل تيكت شكوي  بالتصنيف Complaint Wrong Transaction – chef – less quantity');
+              return;
+            }
 
+            // عميل ديليفري:
             const qPay = radioQuestion({
               title:'هل طريقة الدفع',
               name:'wtPay',
@@ -704,13 +684,14 @@ function buildWT(){
                 wipe(state.wt,['kind','invoiced','abd','rr']);
                 state.wt.pay = (pp.value==='prepaid')?'دفع مسبق "Online Payment"':'كاش - فيزا'; renderMiniSummary();
 
+                /* --- دفع مسبق --- */
                 if(pp.value==='prepaid'){
                   const qKindP = radioQuestion({
                     title:'هل المنتج',
                     name:'wtKindP',
                     options:[
                       {value:'fish', label:'سمك'},
-                      {value:'meat', label:'لحوم – جبن بالوزن - دواجن'},
+                      {value:'meat', label:'لحوم – جبن  بالوزن - دواجن'},
                       {value:'other',label:'منتجات أخري'}
                     ]
                   });
@@ -722,14 +703,31 @@ function buildWT(){
                       wipe(state.wt,['invoiced','abd','rr']);
                       state.wt.kind = (k.value==='fish')?'سمك':(k.value==='meat'?'لحوم – جبن بالوزن - دواجن':'منتجات أخرى'); renderMiniSummary();
 
-                      if(k.value==='fish'){ addResult('Complaint Wrong Transaction – chef – less quantity'); }
-                      else if(k.value==='meat'){ addResult('Complaint Wrong Transaction – chef – less quantity'); }
-                      else{ addResult('Complaint Wrong Transaction – Picker –Less Quantity'); }
+                      if(k.value==='fish'){
+                        const qInv = radioQuestion({
+                          title:'هل تم المحاسبة في الفاتورة على الكمية كاملة؟',
+                          name:'wtInvPreFish',
+                          options:[ {value:'yes',label:'نعم'}, {value:'no',label:'لا'} ]
+                        });
+                        questionsEl.appendChild(qInv);
+                        qInv.querySelectorAll('input[name="wtInvPreFish"]').forEach(inv=>{
+                          inv.onchange=()=>{
+                            pruneNextSiblings(qInv,'q-block'); resetRequired();
+                            state.wt.invoiced = inv.value==='yes'?'نعم':'لا'; renderMiniSummary();
+                            addResult('يتم عمل تيكت شكوي  بالتصنيف Complaint Wrong Transaction – chef – less quantity');
+                          };
+                        });
+                      }else if(k.value==='meat'){
+                        addResult('يتم عمل تيكت شكوي  بالتصنيف Complaint Wrong Transaction – chef – less quantity');
+                      }else{
+                        addResult('يتم عمل تيكت شكوي  بالتصنيف Complaint Wrong Transaction – Picker –Less Quantity');
+                      }
                     };
                   });
                   return;
                 }
 
+                /* --- كاش - فيزا --- */
                 const qKindC = radioQuestion({
                   title:'هل منتج:',
                   name:'wtKindC',
@@ -747,35 +745,48 @@ function buildWT(){
                     wipe(state.wt,['invoiced','abd','rr']);
                     state.wt.kind = (k.value==='fish')?'سمك':(k.value==='meat'?'لحوم / دواجن – جبن بالوزن':'منتجات أخرى'); renderMiniSummary();
 
-                    if(k.value==='fish'){ addResult('Complaint Wrong Transaction – chef – less quantity'); return; }
+                    if(k.value==='fish'){
+                      const qInvFish = radioQuestion({
+                        title:'هل تم المحاسبة في الفاتورة على الكمية كاملة؟',
+                        name:'wtInvCashFish',
+                        options:[ {value:'yes',label:'نعم'}, {value:'no',label:'لا'} ]
+                      });
+                      questionsEl.appendChild(qInvFish);
+                      qInvFish.querySelectorAll('input[name="wtInvCashFish"]').forEach(inv=>{
+                        inv.onchange=()=>{
+                          pruneNextSiblings(qInvFish,'q-block'); resetRequired();
+                          state.wt.invoiced = inv.value==='yes'?'نعم':'لا'; renderMiniSummary();
+                          addResult('يتم عمل تيكت شكوي  بالتصنيف Complaint Wrong Transaction – chef – less quantity');
+                        };
+                      });
+                      return;
+                    }
 
                     if(k.value==='meat'){
                       const qInvMeat = radioQuestion({
                         title:'هل تم المحاسبة في الفاتورة على الكمية كاملة؟',
-                        name:'wtInvMeat',
+                        name:'wtInvCashMeat',
                         options:[ {value:'yes',label:'نعم'}, {value:'no',label:'لا'} ]
                       });
                       questionsEl.appendChild(qInvMeat);
 
-                      qInvMeat.querySelectorAll('input[name="wtInvMeat"]').forEach(inv=>{
+                      qInvMeat.querySelectorAll('input[name="wtInvCashMeat"]').forEach(inv=>{
                         inv.onchange=()=>{
                           pruneNextSiblings(qInvMeat,'q-block'); resetRequired();
-                          wipe(state.wt,['abd','rr']);
                           state.wt.invoiced = inv.value==='yes'?'نعم':'لا'; renderMiniSummary();
 
                           if(inv.value==='yes'){
                             addResult('عمل طلب جديد بباقي الكمية.');
                             addResult('ترحيل موعد التوصيل فترة واحدة.');
                             addResult('إضافة تعليق "خاص بشكوى".');
-                            addResult('Complaint Wrong Transaction – Chef – عدم الالتزام بالوزنة');
-                            addResult('يتم إضافة PDF بالشكوى.');
+                            addResult('عمل تيكت شكوي  بالتصنيف ويتم أضافة PDF بالشكوي Complaint Wrong Transaction – Chef – عدم الالتزام بالوزنة');
                           }else{
                             const qABDMeat = radioQuestion({
                               title:'اختر الحالة:',
                               name:'wtABDMeat',
                               options:[
-                                {value:'partial',  label:'الحالة الاولي: تم أرسال الكمية المتاحة لعدم توافر كامل الكمية'},
-                                {value:'nochange', label:'الحالة الثانية: لا يوجد اي تعديل علي المنتج و الكمية من خلال الABD'}
+                                {value:'partial',  label:'الحالة الاولي : تم أرسال الكمية المتاحة لعدم توافر كامل الكمية'},
+                                {value:'nochange', label:'الحالة الثانية : لا يوجد اي تعديل علي المنتج و الكمية من خلال الABD'}
                               ]
                             });
                             questionsEl.appendChild(qABDMeat);
@@ -791,8 +802,7 @@ function buildWT(){
                                   addResult('عمل طلب جديد بباقي الكمية.');
                                   addResult('ترحيل موعد التوصيل فترة واحدة.');
                                   addResult('إضافة تعليق "خاص بشكوى".');
-                                  addResult('Complaint Wrong Transaction – Chef –عدم الالتزام بالوزن');
-                                  addResult('يتم إضافة PDF بالشكوى.');
+                                  addResult('عمل تيكت شكوي  بالتصنيف ويتم أضافة PDF بالشكوي Complaint Wrong Transaction – Chef –عدم الالتزام بالوزن');
                                 }
                               };
                             });
@@ -802,32 +812,31 @@ function buildWT(){
                       return;
                     }
 
+                    // منتجات أخرى (كاش)
                     const qInvOther = radioQuestion({
                       title:'هل تم المحاسبة في الفاتورة على الكمية كاملة؟',
-                      name:'wtInvOther',
+                      name:'wtInvCashOther',
                       options:[ {value:'yes',label:'نعم'}, {value:'no',label:'لا'} ]
                     });
                     questionsEl.appendChild(qInvOther);
 
-                    qInvOther.querySelectorAll('input[name="wtInvOther"]').forEach(inv=>{
+                    qInvOther.querySelectorAll('input[name="wtInvCashOther"]').forEach(inv=>{
                       inv.onchange=()=>{
                         pruneNextSiblings(qInvOther,'q-block'); resetRequired();
-                        wipe(state.wt,['abd','rr']);
                         state.wt.invoiced = inv.value==='yes'?'نعم':'لا'; renderMiniSummary();
 
                         if(inv.value==='yes'){
                           addResult('عمل طلب جديد بباقي الكمية.');
                           addResult('ترحيل موعد التوصيل فترة واحدة.');
                           addResult('إضافة تعليق "خاص بشكوى".');
-                          addResult('Complaint Wrong Transaction – Picker –Less Quantity');
-                          addResult('يتم إضافة PDF بالشكوى.');
+                          addResult('عمل تيكت شكوي  بالتصنيف ويتم أضافة PDF بالشكوي Complaint Wrong Transaction – Picker –Less Quantity');
                         }else{
                           const qABDOther = radioQuestion({
                             title:'اختر الحالة:',
                             name:'wtABDOther',
                             options:[
-                              {value:'partial',  label:'الحالة الاولي: تم أرسال الكمية المتاحة لعدم توافر كامل الكمية'},
-                              {value:'nochange', label:'الحالة الثانية: لا يوجد اي تعديل علي المنتج و الكمية من خلال الABD'}
+                              {value:'partial',  label:'الحالة الاولي : تم أرسال الكمية المتاحة لعدم توافر كامل الكمية'},
+                              {value:'nochange', label:'الحالة الثانية : لا يوجد اي تعديل علي المنتج و الكمية من خلال الABD'}
                             ]
                           });
                           questionsEl.appendChild(qABDOther);
@@ -843,8 +852,7 @@ function buildWT(){
                                 addResult('عمل طلب جديد بباقي الكمية.');
                                 addResult('ترحيل موعد التوصيل فترة واحدة.');
                                 addResult('إضافة تعليق "خاص بشكوى".');
-                                addResult('Complaint Wrong Transaction – Picker –Less Quantity');
-                                addResult('يتم إضافة PDF بالشكوى.');
+                                addResult('عمل تيكت شكوي  بالتصنيف ويتم أضافة PDF بالشكوي Complaint Wrong Transaction – Picker –Less Quantity');
                               }
                             };
                           });
@@ -860,7 +868,7 @@ function buildWT(){
         return;
       }
 
-      /* ===== الحالة الثانية: عدم الالتزام بكومنت ===== */
+      /* ===== الحالة الثانية (عدم الالتزام بكومنت) ===== */
       const qClient2 = radioQuestion({
         title:'نوع العميل :',
         name:'wtCClient',
@@ -936,7 +944,7 @@ function buildWT(){
 
                   if(k.value==='meat'){
                     const qRRMeat = radioQuestion({
-                      title:'هل تريد استرجاع ام استبدال المنتج؟',
+                      title:'هل تم تريد استرجاع ام استبدال المنتج؟',
                       name:'wtCRRMeat',
                       options:[ {value:'return',label:'أسترجاع فقط'}, {value:'replace',label:'أستبدال'} ]
                     });
@@ -953,26 +961,16 @@ function buildWT(){
                           addResult('عمل طلب جديد بالمنتج.');
                           addResult('ترحيل موعد التوصيل فترة واحدة.');
                           addResult('إضافة تعليق "خاص بشكوى".');
-                          addResult('Complaint Wrong Transaction – Chef –عدم الالتزام بكومنت');
-                          addResult('يتم إضافة PDF بالشكوى.');
+                          addResult('عمل تيكت شكوي  بالتصنيف ويتم أضافة PDF بالشكوي Complaint Wrong Transaction – Chef –عدم الالتزام بكومنت');
                         }
                       };
                     });
                     return;
                   }
 
-                  const qInvOtherC = radioQuestion({
-                    title:'هل تم المحاسبة في الفاتورة على الكمية كاملة؟',
-                    name:'wtInvOtherC',
-                    options:[ {value:'yes',label:'نعم'}, {value:'no',label:'لا'} ]
-                  });
-                  questionsEl.appendChild(qInvOtherC);
-                  qInvOtherC.querySelectorAll('input[name="wtInvOtherC"]').forEach(inv=>{
-                    inv.onchange=()=>{ state.wt.invoiced = inv.value==='yes'?'نعم':'لا'; renderMiniSummary(); };
-                  });
-
+                  // منتجات أخرى (كاش) — حسب التعديل الأخير: فقط استرجاع/استبدال (بدون سؤال الفاتورة)
                   const qRROther = radioQuestion({
-                    title:'هل تريد استرجاع ام استبدال المنتج؟',
+                    title:'هل تم تريد استرجاع ام استبدال المنتج؟',
                     name:'wtCRROther',
                     options:[ {value:'return',label:'أسترجاع فقط'}, {value:'replace',label:'أستبدال'} ]
                   });
@@ -989,8 +987,7 @@ function buildWT(){
                         addResult('عمل طلب جديد بباقي الكمية.');
                         addResult('ترحيل موعد التوصيل فترة واحدة.');
                         addResult('إضافة تعليق "خاص بشكوى".');
-                        addResult('Complaint Wrong Transaction – Picker –عدم الالتزام بكومنت');
-                        addResult('يتم إضافة PDF بالشكوى.');
+                        addResult('عمل تيكت شكوي  بالتصنيف ويتم أضافة PDF بالشكوي Complaint Wrong Transaction – Picker –عدم الالتزام بكومنت');
                       }
                     };
                   });
@@ -1038,10 +1035,9 @@ function buildDelay(){
    إنهاء الشكوى + Reset
    ========================= */
 function clearComplaintInputs(){
-  ['custNumber','callerNumber','orderNumber','orderCreated','receiptNumber','productName','otherNotes'].forEach(id=>{
-    const el = document.getElementById(id);
-    if(el){ el.value=''; el.classList.remove('invalid'); }
-  });
+  // لم يعد هناك حقول سوى otherNotes
+  const el = document.getElementById('otherNotes');
+  if(el){ el.value=''; el.classList.remove('invalid'); }
 }
 function resetAll(){
   state.type=null;
@@ -1086,13 +1082,7 @@ btnEnd && btnEnd.addEventListener('click', ()=>{
 });
 
 btnCopy && btnCopy.addEventListener('click', async()=>{
-  const {missing, missingKeys} = getMissingFields(REQUIRED_FIELDS_MODE);
-  if(missing.length){
-    markInvalidFields(missingKeys, true);
-    showToast(`لا يمكن نسخ الخلاصة — يوجد بيانات ناقصة في «بيانات الشكوى». من فضلك أكملها: ${missing.join('، ')}`, 'error');
-    document.getElementById(FIELD_MAP[missingKeys[0]].id)?.focus();
-    return;
-  }
+  // تم تعطيل التحقق من “بيانات الشكوى” — فقط تحقق خاص بحالة delay
   if(state.type==='delay' && !state.delay.interval){
     const el = document.getElementById('delayInterval');
     markInvalidEl(el, true);
@@ -1110,12 +1100,7 @@ btnCopy && btnCopy.addEventListener('click', async()=>{
 });
 
 btnSave && btnSave.addEventListener('click', ()=>{
-  const cust = FIELDS.custNumber();
-  if(!cust){
-    markInvalidFields(['custNumber'], true);
-    document.getElementById('custNumber')?.focus();
-    showToast('لا يمكن حفظ المسودة — Customer Number مطلوب.', 'error'); return;
-  }
+  // لم يعد هناك شرط Customer Number
   if(state.type==='delay' && !state.delay.interval){
     const el = document.getElementById('delayInterval');
     markInvalidEl(el, true); el?.focus();
@@ -1176,9 +1161,9 @@ btnSave && btnSave.addEventListener('click', ()=>{
 })();
 
 /* =========================
-   تحديث الخلاصة أثناء الكتابة + تقييد أرقام الهاتف
+   تحديث الخلاصة أثناء الكتابة (الملاحظات فقط)
    ========================= */
-['custNumber','callerNumber','orderNumber','orderCreated','receiptNumber','productName','otherNotes'].forEach(id=>{
+['otherNotes'].forEach(id=>{
   const el = document.getElementById(id);
   if(!el) return;
   el.addEventListener('input', ()=>{
@@ -1186,22 +1171,14 @@ btnSave && btnSave.addEventListener('click', ()=>{
     renderMiniSummary();
   });
 });
-function enforcePhone11(el){
-  if(!el) return;
-  el.addEventListener('input', ()=>{
-    el.value = (el.value || '').replace(/\D/g,'').slice(0,11);
-  });
-}
-enforcePhone11(document.getElementById('custNumber'));
-enforcePhone11(document.getElementById('callerNumber'));
 
 /* =========================
-   Drafts: حفظ/عرض/بحث/حذف (كلها آمنة لو مفيش عناصر Drafts)
+   Drafts: حفظ/عرض/بحث/حذف (آمن حتى لو عناصر الـDrafts غير موجودة)
    ========================= */
 function readDrafts(){ try{ return JSON.parse(localStorage.getItem(DRAFTS_KEY) || '[]'); } catch{ return []; } }
 function writeDrafts(list){ try{ localStorage.setItem(DRAFTS_KEY, JSON.stringify(list)); }catch{} }
 function formatTS(ts){
-  try{ return new Date(ts).toLocaleString('en-GB', { dateStyle:'short', timeStyle:'short' }); } // إنجليزي
+  try{ return new Date(ts).toLocaleString('en-GB', { dateStyle:'short', timeStyle:'short' }); }
   catch{ return ts; }
 }
 function currentResultsArray(){
@@ -1211,14 +1188,8 @@ function saveCurrentDraft(){
   const data = {
     id: 'DR_'+Date.now(),
     ts: Date.now(),
-    customer: FIELDS.custNumber(),
+    customer: '', // لم يعد هناك رقم عميل
     fields: {
-      custNumber: FIELDS.custNumber(),
-      callerNumber: FIELDS.callerNumber(),
-      orderNumber: FIELDS.orderNumber(),
-      orderCreated: FIELDS.orderCreated(),
-      receiptNumber: FIELDS.receiptNumber(),
-      productName: FIELDS.productName(),
       otherNotes: FIELDS.otherNotes(),
     },
     type: state.type,
@@ -1279,9 +1250,8 @@ function loadDraftByIdFromURL(){
     if(!d){ showToast('لم يتم العثور على هذه المسودة.', 'error'); return; }
 
     resetAll();
-    ['custNumber','callerNumber','orderNumber','orderCreated','receiptNumber','productName','otherNotes'].forEach(k=>{
-      const el = document.getElementById(k); if(el) el.value = d.fields?.[k] ?? '';
-    });
+    const el = document.getElementById('otherNotes');
+    if(el) el.value = d.fields?.otherNotes ?? '';
 
     state.type = d.type || null;
     if(d.state){
