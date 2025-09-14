@@ -57,7 +57,7 @@
       </article>
     </section>
 
-    <!-- يمين: نوع الشكوى + الأسئلة + المطلوب + (بيانات الشكوى تحت) -->
+    <!-- يمين: نوع الشكوى + الأسئلة + المطلوب + (الملاحظات فقط تحت) -->
     <section class="col-right">
       <article class="card p-card">
         <h3 class="card-title" data-ico="📋">نوع الشكوى</h3>
@@ -81,43 +81,12 @@
         <div id="summary"></div>
       </article>
 
-      <!-- بيانات الشكوى -->
+      <!-- الملاحظات فقط -->
       <article class="card p-card mt16">
-        <h3 class="card-title" data-ico="📑">بيانات الشكوى</h3>
+        <h3 class="card-title" data-ico="📑">الملاحظات </h3>
         <div class="form-grid">
-          <!-- صف 1 -->
-          <div class="form-field">
-            <div class="label">Customer Number</div>
-            <input id="custNumber" type="text" placeholder="01XXXXXXXXX" maxlength="11" inputmode="numeric" />
-          </div>
-          <div class="form-field">
-            <div class="label">Order Number</div>
-            <input id="orderNumber" type="text" placeholder="SO-XXXXXXX" />
-          </div>
-
-          <!-- صف 2: رقم تواصل آخر تحت رقم العميل -->
-          <div class="form-field">
-            <div class="label">Another Mobile Number</div>
-            <input id="callerNumber" type="text" placeholder="01XXXXXXXXX" maxlength="11" inputmode="numeric" />
-          </div>
-          <div class="form-field">
-            <div class="label">Order Created from FL</div>
-            <input id="orderCreated" type="text" placeholder="2025-08-01 14:33" />
-          </div>
-
-          <!-- صف 3 -->
-          <div class="form-field">
-            <div class="label">Receipt Number</div>
-            <input id="receiptNumber" type="text" placeholder="RCPT-XXXXXX" />
-          </div>
           <div class="form-field" style="grid-column:1/-1;">
-            <div class="label">Product</div>
-            <input id="productName" type="text" placeholder="Norwegian Salmon 500g" />
-          </div>
-
-          <!-- صف 4: ملاحظات أخرى -->
-          <div class="form-field" style="grid-column:1/-1;">
-            <div class="label">ملاحظات أخرى</div>
+            <div class="label">الملاحظات </div>
             <textarea id="otherNotes" class="note-field" rows="3"
               placeholder="برجاء كتابة أي تفاصيل متعلقة بالعميل مثل: التواصل قبل الساعة 11"></textarea>
           </div>
