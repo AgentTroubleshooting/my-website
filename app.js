@@ -44,40 +44,57 @@ function showToast(msg, type='error'){
   toastTimer = setTimeout(()=>{ t.remove(); }, 3200);
 }
 
-/* ======= نص إضافي تلقائي عند أي "طلب جديد" (بِـ Bold/لون مميز للجملة المهمة) ======= */
-const APOLOGY_NOTE_HTML = `
-  <div>ونقول للعميل (<strong style="font-weight:700;color:#1a237e">بعتذر لحضرتك جداً عن أي مشكلة واجهتك، هيتم مراجعة الشكوى داخلياً من غير ما نزعج حضرتك</strong>)</div>
-  <div>وفي حالة إن العميل أصر على التواصل معاه من خلال قسم الشكاوى:</div>
-  <div>يتم توضيح ده في الـ Ticket بشكل واضح علشان يتم المتابعة من الفريق المختص.</div>
-`;
-function shouldAppendApology(text){
-  const t = (text || '').toLowerCase();
-  return t.includes('طلب جديد') || t.includes('new order');
-}
-
 /* ======= Utilities ======= */
 function show(el, on) { if(!el) return; el.style.display = on ? '' : 'none'; }
 function clear(el) { if(!el) return; el.innerHTML = ''; }
 function esc(s=''){ return s.replace(/[&<>"']/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m])); }
-function addResult(text) {
+
+/* ========== تنسيق خاص لسطر الاعتذار ========== */
+(function injectApologyStyle(){
+  try{
+    const st = document.createElement('style');
+    st.textContent = `
+      .result-apology .apology-main{ font-weight:700; color:#0d47a1; }
+    `;
+    document.head.appendChild(st);
+  }catch{}
+})();
+
+/* دالة فحص: نضيف رسالة الاعتذار فقط عندما يكون المطلوب "عمل طلب جديد" فعليًا (وليس "عرض") */
+function shouldInjectApology(line=''){
+  const t = (line||'').trim();
+  if(/^\s*عرض\s+طلب\s+جديد/i.test(t)) return false;                 // استبعاد "عرض طلب جديد"
+  if(/^\s*يتم\s+عرض\s+طلب\s+جديد/i.test(t)) return false;           // استبعاد "يتم عرض طلب جديد"
+  return (
+    /^\s*عمل\s+طلب\s+جديد\b/.test(t)                                 // يبدأ بـ عمل طلب جديد
+    || /طلب\s+جديد\s+بالمفقود/.test(t)
+    || /عمل\s+طلب\s+جديد\s+بباقي\s+الكمية/.test(t)
+    || /عمل\s+طلب\s+جديد\s+بالمنتج/.test(t)
+  );
+}
+
+/* نضيف نتيجة + (رسالة الاعتذار أوتوماتيكياً تحت أي "عمل طلب جديد") */
+function addResult(text, opts={}){
   show(qaCard, true);
   show(document.getElementById('summaryCard'), true);
 
   const d = document.createElement('div');
-  d.className = 'result';
-  d.textContent = text;
+  d.className = 'result' + (opts.className ? ` ${opts.className}` : '');
+  if(opts.html) d.innerHTML = text; else d.textContent = text;
   requiredEl.appendChild(d);
 
-  // لو السطر فيه "طلب جديد" نضيف رسالة الاعتذار المميزة تحته مباشرة
-  if (shouldAppendApology(text)) {
+  if(shouldInjectApology(text)){
     const ap = document.createElement('div');
-    ap.className = 'result';
-    ap.innerHTML = APOLOGY_NOTE_HTML;
+    ap.className = 'result result-apology';
+    ap.innerHTML = `نقول للعميل (<span class="apology-main"><strong>بعتذر لحضرتك جداً عن أي مشكلة واجهتك، هيتم مراجعة الشكوى داخلياً من غير ما نزعج حضرتك</strong></span>)<br>
+    وفي حالة إن العميل أصر على التواصل معاه من خلال قسم الشكاوى:<br>
+    يتم توضيح ده في الـ Ticket بشكل واضح علشان يتم المتابعة من الفريق المختص.`;
     requiredEl.appendChild(ap);
   }
 
   renderMiniSummary();
 }
+
 function resetRequired() { clear(requiredEl); renderMiniSummary(); }
 function pruneNextSiblings(node, className) {
   let n = node?.nextElementSibling;
@@ -271,7 +288,7 @@ const PQ_CASES = [
 ];
 function pqClass(sub){ return `Complaint – Product Quality – ${sub}`; }
 function replaceTextFor(caseId){
-  const SAME = new Set(['mold','spoiled','hyg','expired']);
+  const SAME = new Set(['mold','spoiled','hyg','expired','salty']);
   return SAME.has(caseId)?'عمل طلب جديد بنفس الكمية في الطلب الاساسي.':'عمل طلب جديد بنفس الكمية في الطلب الاساسي.';
 }
 
@@ -443,7 +460,7 @@ function withClientFlowPQ(caseObj, mount){
 }
 
 /* =========================
-   عناصر مفقودة
+   عناصر مفقودة (Missing Items) — وفق السكربت المُحدّث
    ========================= */
 function buildMissing(){
   state.type='missing';
@@ -478,6 +495,7 @@ function buildMissing(){
             wipe(state.mi,['pay','fish','abd','source']);
             state.mi.inv = inv0.value==='yes'?'نعم':'لا'; renderMiniSummary();
 
+            /* ======== متحاسب في الفاتورة: YES ======== */
             if(inv0.value==='yes'){
               const qPay = radioQuestion({
                 title:'هل طريقة الدفع',
@@ -492,8 +510,9 @@ function buildMissing(){
                   wipe(state.mi,['fish','abd','source']);
                   state.mi.pay = pp.value==='prepaid'?'دفع مسبق "Online Payment"':'كاش - فيزا'; renderMiniSummary();
 
-                  if(pp.value==='prepaid'){ addResult('شكوى Delivery – Complaint - Missing Item فقط.'); }
-                  else{
+                  if(pp.value==='prepaid'){
+                    addResult('شكوى Delivery – Complaint - Missing Item فقط.');
+                  }else{
                     const qFish = radioQuestion({
                       title:'هل المنتج سمك؟',
                       name:'miFish',
@@ -506,8 +525,9 @@ function buildMissing(){
                         pruneNextSiblings(qFish,'q-block'); resetRequired();
                         state.mi.fish = ff.value==='yes'?'سمك':'ليس سمك'; renderMiniSummary();
 
-                        if(ff.value==='yes'){ addResult('شكوى Delivery – Complaint - Missing Item فقط.'); }
-                        else{
+                        if(ff.value==='yes'){
+                          addResult('شكوى Delivery – Complaint - Missing Item فقط.');
+                        }else{
                           addResult('طلب جديد بالمفقود.');
                           addResult('ترحيل فترة واحدة.');
                           addResult('تعليق \'خاص بشكوى\'.');
@@ -519,7 +539,8 @@ function buildMissing(){
                 };
               });
 
-            }else{ // inv = no
+            /* ======== غير متحاسب في الفاتورة: NO ======== */
+            }else{
               const qPay2 = radioQuestion({
                 title:'هل طريقة الدفع',
                 name:'miPay1',
@@ -533,6 +554,7 @@ function buildMissing(){
                   wipe(state.mi,['fish','abd','source']);
                   state.mi.pay = pp2.value==='prepaid'?'دفع مسبق "Online Payment"':'كاش - فيزا'; renderMiniSummary();
 
+                  /* --- غير متحاسب + دفع مسبق --- */
                   if(pp2.value==='prepaid'){
                     const qABD1 = radioQuestion({
                       title:'مراجعة الماجينتو وتيكت الأدمن داش بورد:',
@@ -559,7 +581,8 @@ function buildMissing(){
                       };
                     });
 
-                  }else{ // cash
+                  /* --- غير متحاسب + كاش/فيزا --- */
+                  }else{
                     const qSrc = radioQuestion({
                       title:'الطلب من:',
                       name:'miSrc',
@@ -626,7 +649,7 @@ function buildMissing(){
 }
 
 /* =========================
-   خطأ فردي (WT) — مُحدّث حسب المطلوب الأخير
+   خطأ فردي (WT) — حسب آخر نسخة شاركتها
    ========================= */
 function buildWT(){
   state.type='wt';
@@ -650,7 +673,7 @@ function buildWT(){
       state.wt.scenario = (r.value==='less')?'الحالة الأولى (كمية أقل)':'الحالة الثانية (عدم الالتزام بكومنت)';
       renderMiniSummary();
 
-      /* ===== الحالة الأولى (وصول منتج بكميات أقل) ===== */
+      /* ===== الحالة الأولى: كمية أقل ===== */
       if(r.value==='less'){
         const qClient = radioQuestion({
           title:'نوع العميل :',
@@ -665,12 +688,8 @@ function buildWT(){
             wipe(state.wt,['pay','kind','invoiced','abd','rr']);
             state.wt.client = (c.value==='branch')?'عميل فرع':'عميل ديليفري'; renderMiniSummary();
 
-            if(c.value==='branch'){
-              addResult('يتم عمل تيكت شكوي  بالتصنيف Complaint Wrong Transaction – chef – less quantity');
-              return;
-            }
+            if(c.value==='branch'){ addResult('Complaint Wrong Transaction – chef – less quantity يتم عمل شكوي'); return; }
 
-            // عميل ديليفري:
             const qPay = radioQuestion({
               title:'هل طريقة الدفع',
               name:'wtPay',
@@ -684,7 +703,6 @@ function buildWT(){
                 wipe(state.wt,['kind','invoiced','abd','rr']);
                 state.wt.pay = (pp.value==='prepaid')?'دفع مسبق "Online Payment"':'كاش - فيزا'; renderMiniSummary();
 
-                /* --- دفع مسبق --- */
                 if(pp.value==='prepaid'){
                   const qKindP = radioQuestion({
                     title:'هل المنتج',
@@ -701,33 +719,32 @@ function buildWT(){
                     k.onchange=()=>{
                       pruneNextSiblings(qKindP,'q-block'); resetRequired();
                       wipe(state.wt,['invoiced','abd','rr']);
-                      state.wt.kind = (k.value==='fish')?'سمك':(k.value==='meat'?'لحوم – جبن بالوزن - دواجن':'منتجات أخرى'); renderMiniSummary();
+                      state.wt.kind = (k.value==='fish')?'سمك':(k.value==='meat'?'لحوم – جبن  بالوزن - دواجن':'منتجات أخرى'); renderMiniSummary();
 
                       if(k.value==='fish'){
-                        const qInv = radioQuestion({
+                        const qInvFish = radioQuestion({
                           title:'هل تم المحاسبة في الفاتورة على الكمية كاملة؟',
-                          name:'wtInvPreFish',
+                          name:'wtInvFishP',
                           options:[ {value:'yes',label:'نعم'}, {value:'no',label:'لا'} ]
                         });
-                        questionsEl.appendChild(qInv);
-                        qInv.querySelectorAll('input[name="wtInvPreFish"]').forEach(inv=>{
+                        questionsEl.appendChild(qInvFish);
+                        qInvFish.querySelectorAll('input[name="wtInvFishP"]').forEach(inv=>{
                           inv.onchange=()=>{
-                            pruneNextSiblings(qInv,'q-block'); resetRequired();
+                            pruneNextSiblings(qInvFish,'q-block'); resetRequired();
                             state.wt.invoiced = inv.value==='yes'?'نعم':'لا'; renderMiniSummary();
-                            addResult('يتم عمل تيكت شكوي  بالتصنيف Complaint Wrong Transaction – chef – less quantity');
+                            addResult('Complaint Wrong Transaction – chef – less quantity يتم عمل شكوي');
                           };
                         });
                       }else if(k.value==='meat'){
-                        addResult('يتم عمل تيكت شكوي  بالتصنيف Complaint Wrong Transaction – chef – less quantity');
+                        addResult('Complaint Wrong Transaction – chef – less quantity يتم عمل شكوي');
                       }else{
-                        addResult('يتم عمل تيكت شكوي  بالتصنيف Complaint Wrong Transaction – Picker –Less Quantity');
+                        addResult('Complaint Wrong Transaction – Picker –Less Quantity يتم عمل شكوي');
                       }
                     };
                   });
                   return;
                 }
 
-                /* --- كاش - فيزا --- */
                 const qKindC = radioQuestion({
                   title:'هل منتج:',
                   name:'wtKindC',
@@ -746,17 +763,17 @@ function buildWT(){
                     state.wt.kind = (k.value==='fish')?'سمك':(k.value==='meat'?'لحوم / دواجن – جبن بالوزن':'منتجات أخرى'); renderMiniSummary();
 
                     if(k.value==='fish'){
-                      const qInvFish = radioQuestion({
+                      const qInvFishC = radioQuestion({
                         title:'هل تم المحاسبة في الفاتورة على الكمية كاملة؟',
-                        name:'wtInvCashFish',
+                        name:'wtInvFishC',
                         options:[ {value:'yes',label:'نعم'}, {value:'no',label:'لا'} ]
                       });
-                      questionsEl.appendChild(qInvFish);
-                      qInvFish.querySelectorAll('input[name="wtInvCashFish"]').forEach(inv=>{
+                      questionsEl.appendChild(qInvFishC);
+                      qInvFishC.querySelectorAll('input[name="wtInvFishC"]').forEach(inv=>{
                         inv.onchange=()=>{
-                          pruneNextSiblings(qInvFish,'q-block'); resetRequired();
+                          pruneNextSiblings(qInvFishC,'q-block'); resetRequired();
                           state.wt.invoiced = inv.value==='yes'?'نعم':'لا'; renderMiniSummary();
-                          addResult('يتم عمل تيكت شكوي  بالتصنيف Complaint Wrong Transaction – chef – less quantity');
+                          addResult('Complaint Wrong Transaction – chef – less quantity يتم عمل شكوي');
                         };
                       });
                       return;
@@ -765,28 +782,30 @@ function buildWT(){
                     if(k.value==='meat'){
                       const qInvMeat = radioQuestion({
                         title:'هل تم المحاسبة في الفاتورة على الكمية كاملة؟',
-                        name:'wtInvCashMeat',
+                        name:'wtInvMeat',
                         options:[ {value:'yes',label:'نعم'}, {value:'no',label:'لا'} ]
                       });
                       questionsEl.appendChild(qInvMeat);
 
-                      qInvMeat.querySelectorAll('input[name="wtInvCashMeat"]').forEach(inv=>{
+                      qInvMeat.querySelectorAll('input[name="wtInvMeat"]').forEach(inv=>{
                         inv.onchange=()=>{
                           pruneNextSiblings(qInvMeat,'q-block'); resetRequired();
+                          wipe(state.wt,['abd','rr']);
                           state.wt.invoiced = inv.value==='yes'?'نعم':'لا'; renderMiniSummary();
 
                           if(inv.value==='yes'){
                             addResult('عمل طلب جديد بباقي الكمية.');
                             addResult('ترحيل موعد التوصيل فترة واحدة.');
                             addResult('إضافة تعليق "خاص بشكوى".');
-                            addResult('عمل تيكت شكوي  بالتصنيف ويتم أضافة PDF بالشكوي Complaint Wrong Transaction – Chef – عدم الالتزام بالوزنة');
+                            addResult('Complaint Wrong Transaction – Chef – عدم الالتزام بالوزنة');
+                            addResult('يتم إضافة PDF بالشكوى.');
                           }else{
                             const qABDMeat = radioQuestion({
                               title:'اختر الحالة:',
                               name:'wtABDMeat',
                               options:[
-                                {value:'partial',  label:'الحالة الاولي : تم أرسال الكمية المتاحة لعدم توافر كامل الكمية'},
-                                {value:'nochange', label:'الحالة الثانية : لا يوجد اي تعديل علي المنتج و الكمية من خلال الABD'}
+                                {value:'partial',  label:'الحالة الاولي: تم أرسال الكمية المتاحة لعدم توافر كامل الكمية'},
+                                {value:'nochange', label:'الحالة الثانية: لا يوجد اي تعديل علي المنتج و الكمية من خلال الABD'}
                               ]
                             });
                             questionsEl.appendChild(qABDMeat);
@@ -802,7 +821,8 @@ function buildWT(){
                                   addResult('عمل طلب جديد بباقي الكمية.');
                                   addResult('ترحيل موعد التوصيل فترة واحدة.');
                                   addResult('إضافة تعليق "خاص بشكوى".');
-                                  addResult('عمل تيكت شكوي  بالتصنيف ويتم أضافة PDF بالشكوي Complaint Wrong Transaction – Chef –عدم الالتزام بالوزن');
+                                  addResult('Complaint Wrong Transaction – Chef –عدم الالتزام بالوزن');
+                                  addResult('يتم إضافة PDF بالشكوى.');
                                 }
                               };
                             });
@@ -812,31 +832,32 @@ function buildWT(){
                       return;
                     }
 
-                    // منتجات أخرى (كاش)
                     const qInvOther = radioQuestion({
                       title:'هل تم المحاسبة في الفاتورة على الكمية كاملة؟',
-                      name:'wtInvCashOther',
+                      name:'wtInvOther',
                       options:[ {value:'yes',label:'نعم'}, {value:'no',label:'لا'} ]
                     });
                     questionsEl.appendChild(qInvOther);
 
-                    qInvOther.querySelectorAll('input[name="wtInvCashOther"]').forEach(inv=>{
+                    qInvOther.querySelectorAll('input[name="wtInvOther"]').forEach(inv=>{
                       inv.onchange=()=>{
                         pruneNextSiblings(qInvOther,'q-block'); resetRequired();
+                        wipe(state.wt,['abd','rr']);
                         state.wt.invoiced = inv.value==='yes'?'نعم':'لا'; renderMiniSummary();
 
                         if(inv.value==='yes'){
                           addResult('عمل طلب جديد بباقي الكمية.');
                           addResult('ترحيل موعد التوصيل فترة واحدة.');
                           addResult('إضافة تعليق "خاص بشكوى".');
-                          addResult('عمل تيكت شكوي  بالتصنيف ويتم أضافة PDF بالشكوي Complaint Wrong Transaction – Picker –Less Quantity');
+                          addResult('Complaint Wrong Transaction – Picker –Less Quantity');
+                          addResult('يتم إضافة PDF بالشكوى.');
                         }else{
                           const qABDOther = radioQuestion({
                             title:'اختر الحالة:',
                             name:'wtABDOther',
                             options:[
-                              {value:'partial',  label:'الحالة الاولي : تم أرسال الكمية المتاحة لعدم توافر كامل الكمية'},
-                              {value:'nochange', label:'الحالة الثانية : لا يوجد اي تعديل علي المنتج و الكمية من خلال الABD'}
+                              {value:'partial',  label:'الحالة الاولي: تم أرسال الكمية المتاحة لعدم توافر كامل الكمية'},
+                              {value:'nochange', label:'الحالة الثانية: لا يوجد اي تعديل علي المنتج و الكمية من خلال الABD'}
                             ]
                           });
                           questionsEl.appendChild(qABDOther);
@@ -852,7 +873,8 @@ function buildWT(){
                                 addResult('عمل طلب جديد بباقي الكمية.');
                                 addResult('ترحيل موعد التوصيل فترة واحدة.');
                                 addResult('إضافة تعليق "خاص بشكوى".');
-                                addResult('عمل تيكت شكوي  بالتصنيف ويتم أضافة PDF بالشكوي Complaint Wrong Transaction – Picker –Less Quantity');
+                                addResult('Complaint Wrong Transaction – Picker –Less Quantity');
+                                addResult('يتم إضافة PDF بالشكوى.');
                               }
                             };
                           });
@@ -868,7 +890,7 @@ function buildWT(){
         return;
       }
 
-      /* ===== الحالة الثانية (عدم الالتزام بكومنت) ===== */
+      /* ===== الحالة الثانية: عدم الالتزام بكومنت ===== */
       const qClient2 = radioQuestion({
         title:'نوع العميل :',
         name:'wtCClient',
@@ -944,7 +966,7 @@ function buildWT(){
 
                   if(k.value==='meat'){
                     const qRRMeat = radioQuestion({
-                      title:'هل تم تريد استرجاع ام استبدال المنتج؟',
+                      title:'هل تريد استرجاع ام استبدال المنتج؟',
                       name:'wtCRRMeat',
                       options:[ {value:'return',label:'أسترجاع فقط'}, {value:'replace',label:'أستبدال'} ]
                     });
@@ -961,16 +983,16 @@ function buildWT(){
                           addResult('عمل طلب جديد بالمنتج.');
                           addResult('ترحيل موعد التوصيل فترة واحدة.');
                           addResult('إضافة تعليق "خاص بشكوى".');
-                          addResult('عمل تيكت شكوي  بالتصنيف ويتم أضافة PDF بالشكوي Complaint Wrong Transaction – Chef –عدم الالتزام بكومنت');
+                          addResult('Complaint Wrong Transaction – Chef –عدم الالتزام بكومنت');
+                          addResult('يتم إضافة PDF بالشكوى.');
                         }
                       };
                     });
                     return;
                   }
 
-                  // منتجات أخرى (كاش) — حسب التعديل الأخير: فقط استرجاع/استبدال (بدون سؤال الفاتورة)
                   const qRROther = radioQuestion({
-                    title:'هل تم تريد استرجاع ام استبدال المنتج؟',
+                    title:'هل تريد استرجاع ام استبدال المنتج؟',
                     name:'wtCRROther',
                     options:[ {value:'return',label:'أسترجاع فقط'}, {value:'replace',label:'أستبدال'} ]
                   });
@@ -987,7 +1009,8 @@ function buildWT(){
                         addResult('عمل طلب جديد بباقي الكمية.');
                         addResult('ترحيل موعد التوصيل فترة واحدة.');
                         addResult('إضافة تعليق "خاص بشكوى".');
-                        addResult('عمل تيكت شكوي  بالتصنيف ويتم أضافة PDF بالشكوي Complaint Wrong Transaction – Picker –عدم الالتزام بكومنت');
+                        addResult('Complaint Wrong Transaction – Picker –عدم الالتزام بكومنت');
+                        addResult('يتم إضافة PDF بالشكوى.');
                       }
                     };
                   });
@@ -1159,18 +1182,6 @@ btnSave && btnSave.addEventListener('click', ()=>{
     setTimeout(computeProgress, 300);
   }
 })();
-
-/* =========================
-   تحديث الخلاصة أثناء الكتابة (الملاحظات فقط)
-   ========================= */
-['otherNotes'].forEach(id=>{
-  const el = document.getElementById(id);
-  if(!el) return;
-  el.addEventListener('input', ()=>{
-    if(el.value?.trim()) el.classList.remove('invalid');
-    renderMiniSummary();
-  });
-});
 
 /* =========================
    Drafts: حفظ/عرض/بحث/حذف (آمن حتى لو عناصر الـDrafts غير موجودة)
