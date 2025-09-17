@@ -69,6 +69,7 @@ function shouldInjectApology(line=''){
     /^\s*عمل\s+طلب\s+جديد\b/.test(t)
     || /طلب\s+جديد\s+بالمفقود/.test(t)
     || /عمل\s+طلب\s+جديد\s+بباقي\s+الكمية/.test(t)
+    || /عمل\s+طلب\s+جديد\s+بنفس\s+الكمية/.test(t)
     || /عمل\s+طلب\s+جديد\s+بالمنتج/.test(t)
   );
 }
@@ -126,7 +127,6 @@ const wipe = (obj, keys)=> keys.forEach(k=> obj[k]=null);
 function buildCopyText(){
   const SEP = '----------------------------------------';
 
-  // لم يعد هناك “الملاحظات” غير الملاحظات
   const data = [];
   const notes = FIELDS.otherNotes();
   if (notes) data.push(['الملاحظات', notes]);
@@ -213,7 +213,6 @@ function renderMiniSummary(){
   if(!miniSummaryEl) return;
   let html = '<div class="mini-title">الخلاصة</div>';
 
-  // لم يعد هناك بيانات غير الملاحظات
   const data = [];
   const notes = FIELDS.otherNotes();
   if (notes) data.push(['الملاحظات', notes]);
@@ -268,30 +267,41 @@ function renderMiniSummary(){
 }
 
 /* =========================
-   جودة المنتج (Product Quality)
+   جودة المنتج (Product Quality) — 14 حالة كما بالوصف
    ========================= */
+
+/* تعريف الحالات */
 const PQ_CASES = [
-  {id:'mold',       label:'عفن',           type:'flow',    sub:'عفن'},
-  {id:'hyg',        label:'هايجين "نظافة عامة"', type:'flow', sub:'هايجين "نظافة عامة"'},
-  {id:'impurities', label:'شوائب بالمنتج',  type:'flow',    sub:'شوائب بالمنتج'},
-  {id:'taste',      label:'رائحة و طعم و لون', type:'flow', sub:'رائحة و طعم و لون'},
-  {id:'spoiled',    label:'فاسد',          type:'flow',    sub:'فاسد'},
-  {id:'broken',     label:'مكسور/مدهوس/مفتوح', type:'flow', sub:'مكسور/ مدهوس / مفتوح'},
-  {id:'notfresh',   label:'غير طازج او فريش', type:'flow',  sub:'غير طازج غير فريش'},
-  {id:'melted',     label:'سايح',          type:'flow',    sub:'سايح'},
-  {id:'taswiya',    label:'تسوية',         type:'taswiya', sub:'تسوية'},
-  {id:'salty',      label:'ملح زائد',       type:'flow',    sub:'ملح زائد'},
-  {id:'expired',    label:'منتهي الصلاحية', type:'flow',    sub:'منتهي الصلاحية'},
-  {id:'fat',        label:'دهون زائدة',    type:'flow',    sub:'دهون زائدة'},
-  {id:'appliances', label:'أجهزة منزلية',  type:'instant', sub:'أجهزة منزلية'},
-  {id:'hotfood',    label:'هوت فوود',      type:'instant', sub:'HotFood - Product Quality'},
+  {id:'appliances', label:'أجهزة منزلية', mode:'instant', sub:'أجهزة منزلية'},
+  {id:'hotfood',    label:'هوت فوود',    mode:'hotfood'},
+  {id:'taswiya',    label:'تسوية',       mode:'flow',    sub:'تسوية',                    fishGate:true,  replaceSame:false},
+  {id:'fat',        label:'دهون زائده',  mode:'flow',    sub:'دهون زائدة',               replaceSame:false},
+  {id:'taste',      label:'رائحة و طعم و لون', mode:'flow', sub:'رائحة و طعم و لون',    replaceSame:false},
+  {id:'melted',     label:'سايح',        mode:'flow',    sub:'سايح',                      replaceSame:false},
+  {id:'impurities', label:'شوائب بالمنتج',mode:'flow',    sub:'شوائب بالمنتج',            replaceSame:false},
+  {id:'mold',       label:'عفن',         mode:'flow',    sub:'عفن',                       replaceSame:true},
+  {id:'notfresh',   label:'غير طازج او فريش', mode:'flow',sub:'غير طازج او فريش',        replaceSame:false},
+  {id:'spoiled',    label:'فاسد',        mode:'flow',    sub:'فاسد',                      replaceSame:true},
+  {id:'broken',     label:'مكسور/مدهوس/مفتوح', mode:'flow', sub:'مكسور/ مدهوس / مفتوح', replaceSame:false},
+  {id:'salty',      label:'ملح زائد',    mode:'flow',    sub:'ملح زائد',                  fishGate:true,  replaceSame:false},
+  {id:'expired',    label:'منتهي الصلاحية', mode:'flow',  sub:'منتهي الصلاحية',           replaceSame:true},
+  {id:'hyg',        label:'هايجين"نظافة عامة"', mode:'flow', sub:'هايجين"نظافة عامة"',   replaceSame:true},
 ];
-function pqClass(sub){ return `Complaint – Product Quality – ${sub}`; }
-function replaceTextFor(caseId){
-  const SAME = new Set(['mold','spoiled','hyg','expired','salty']);
-  return SAME.has(caseId)?'عمل طلب جديد بنفس الكمية في الطلب الاساسي.':'عمل طلب جديد بنفس الكمية في الطلب الاساسي.';
+
+/* مولد نص التصنيف */
+function pqTicket(c){
+  if(c.mode==='hotfood') return 'Complaint–HotFood - Product Quality';
+  return `Complaint – Product Quality – ${c.sub}`;
 }
 
+/* نص “عمل طلب جديد” حسب الحالة */
+function replacementOrderLine(c){
+  return c.replaceSame
+    ? 'عمل طلب جديد بنفس الكمية في الطلب الاساسي.'
+    : 'عمل طلب جديد بباقي الكمية.';
+}
+
+/* البناء الأساسي لقسم جودة المنتج */
 function buildPQ(){
   state.type = 'pq';
   resetStatePart('pq');
@@ -310,6 +320,7 @@ function buildPQ(){
   renderMiniSummary();
 }
 
+/* اختيار الحالة والتفريعات */
 function selectPQCase(c, node){
   document.querySelectorAll('.case').forEach(x=>x.classList.remove('active'));
   node.classList.add('active');
@@ -324,143 +335,119 @@ function selectPQCase(c, node){
   holder.className='q-after-grid';
   questionsEl.appendChild(holder);
 
-  if(c.type==='instant'){ addResult(`يتم عمل تيكت شكوى بالتصنيف ${pqClass(c.sub)}`); return; }
+  // حالات مباشرة
+  if(c.mode==='instant'){ addResult(pqTicket(c)); return; }
+  if(c.mode==='hotfood'){ addResult(pqTicket(c)); return; }
 
-  if(c.type==='taswiya'){
-    const q = radioQuestion({
-      title:'نوع العميل :',
-      name:'pqClient',
-      options:[ {value:'branch',label:'عميل فرع'}, {value:'delivery',label:'عميل ديليفري'} ]
-    });
-    holder.appendChild(q);
-    q.querySelectorAll('input[name="pqClient"]').forEach(r=>{
-      r.onchange=()=>{
-        pruneNextSiblings(q,'q-block'); resetRequired();
-        wipe(state.pq,['pay','product','withClient','rr']);
-        state.pq.client = (r.value==='branch')?'عميل فرع':'عميل ديليفري';
-        renderMiniSummary();
+  // تفريعات عامة للحالات "flow"
+  const qClient = radioQuestion({
+    title:'نوع العميل :',
+    name:'pqClient',
+    options:[ {value:'branch',label:'عميل فرع'}, {value:'delivery',label:'عميل ديليفري'} ]
+  });
+  holder.appendChild(qClient);
 
-        if(r.value==='branch'){ addResult(`يتم عمل تيكت شكوى بالتصنيف ${pqClass(c.sub)}`); }
-        else{
-          const q2 = radioQuestion({
-            title:'هل طريقة الدفع',
-            name:'pqPay',
-            options:[ {value:'prepaid',label:'دفع مسبق "Online Payment"'}, {value:'cash',label:'كاش - فيزا'} ]
-          });
-          holder.appendChild(q2);
-          q2.querySelectorAll('input[name="pqPay"]').forEach(rr=>{
-            rr.onchange=()=>{
-              pruneNextSiblings(q2,'q-block'); resetRequired();
-              wipe(state.pq,['product','withClient','rr']);
-              state.pq.pay = rr.value==='prepaid'?'دفع مسبق "Online Payment"':'كاش - فيزا';
-              renderMiniSummary();
+  qClient.querySelectorAll('input[name="pqClient"]').forEach(r=>{
+    r.onchange=()=>{
+      pruneNextSiblings(qClient,'q-block'); resetRequired();
+      wipe(state.pq,['pay','product','withClient','rr']);
+      state.pq.client = (r.value==='branch')?'عميل فرع':'عميل ديليفري';
+      renderMiniSummary();
 
-              if(rr.value==='prepaid'){ addResult(`يتم عمل تيكت شكوى بالتصنيف ${pqClass(c.sub)}`); }
-              else{
-                const q3 = radioQuestion({
-                  title:'هل المنتج:',
-                  name:'pqProd',
-                  options:[ {value:'fish',label:'سمك'}, {value:'other',label:'أي منتج آخر'} ]
-                });
-                holder.appendChild(q3);
-                q3.querySelectorAll('input[name="pqProd"]').forEach(p=>{
-                  p.onchange=()=>{
-                    pruneNextSiblings(q3,'q-block'); resetRequired();
-                    wipe(state.pq,['withClient','rr']);
-                    state.pq.product = (p.value==='fish')?'سمك':'أي منتج آخر';
-                    renderMiniSummary();
-                    if(p.value==='fish'){ addResult(`يتم عمل تيكت شكوى بالتصنيف ${pqClass(c.sub)}`); }
-                    else { withClientFlowPQ(c, holder); }
-                  };
-                });
-              }
-            };
-          });
-        }
-      };
-    });
-    return;
-  }
+      if(r.value==='branch'){ addResult(pqTicket(c)); return; }
 
-  if(c.type==='flow'){
-    const q = radioQuestion({
-      title:'نوع العميل :',
-      name:'pqClient',
-      options:[ {value:'branch',label:'عميل فرع'}, {value:'delivery',label:'عميل ديليفري'} ]
-    });
-    holder.appendChild(q);
-    q.querySelectorAll('input[name="pqClient"]').forEach(r=>{
-      r.onchange=()=>{
-        pruneNextSiblings(q,'q-block'); resetRequired();
-        wipe(state.pq,['pay','product','withClient','rr']);
-        state.pq.client = (r.value==='branch')?'عميل فرع':'عميل ديليفري'; // إصلاح
-        renderMiniSummary();
-        if(r.value==='branch'){ addResult(`يتم عمل تيكت شكوى بالتصنيف ${pqClass(c.sub)}`); }
-        else{
-          const q2 = radioQuestion({
-            title:'هل طريقة الدفع',
-            name:'pqPay',
-            options:[ {value:'prepaid',label:'دفع مسبق "Online Payment"'}, {value:'cash',label:'كاش - فيزا'} ]
-          });
-          holder.appendChild(q2);
-          q2.querySelectorAll('input[name="pqPay"]').forEach(rr=>{
-            rr.onchange=()=>{
-              pruneNextSiblings(q2,'q-block'); resetRequired();
-              wipe(state.pq,['product','withClient','rr']);
-              state.pq.pay = rr.value==='prepaid'?'دفع مسبق "Online Payment"':'كاش - فيزا';
-              renderMiniSummary();
-              if(rr.value==='prepaid'){ addResult(`يتم عمل تيكت شكوى بالتصنيف ${pqClass(c.sub)}`); }
-              else{ withClientFlowPQ(c, holder, true); }
-            };
-          });
-        }
-      };
-    });
-  }
+      const qPay = radioQuestion({
+        title:'هل طريقة الدفع',
+        name:'pqPay',
+        options:[ {value:'prepaid',label:'دفع مسبق "Online Payment "'}, {value:'cash',label:'كاش - فيزا'} ]
+      });
+      holder.appendChild(qPay);
+
+      qPay.querySelectorAll('input[name="pqPay"]').forEach(pp=>{
+        pp.onchange=()=>{
+          pruneNextSiblings(qPay,'q-block'); resetRequired();
+          wipe(state.pq,['product','withClient','rr']);
+          state.pq.pay = (pp.value==='prepaid')?'دفع مسبق "Online Payment"':'كاش - فيزا';
+          renderMiniSummary();
+
+          if(pp.value==='prepaid'){ addResult(pqTicket(c)); return; }
+
+          // كاش/فيزا
+          if(c.fishGate){
+            const qKind = radioQuestion({
+              title:'هل المنتج:',
+              name:'pqKind',
+              options:[ {value:'fish',label:'سمك'}, {value:'other',label:'أي منتج آخر'} ]
+            });
+            holder.appendChild(qKind);
+
+            qKind.querySelectorAll('input[name="pqKind"]').forEach(k=>{
+              k.onchange=()=>{
+                pruneNextSiblings(qKind,'q-block'); resetRequired();
+                wipe(state.pq,['withClient','rr']);
+                state.pq.product = (k.value==='fish')?'سمك':'أي منتج آخر';
+                renderMiniSummary();
+
+                if(k.value==='fish'){ addResult(pqTicket(c)); }
+                else { withClientReturnReplacePQ(c, holder); }
+              };
+            });
+          }else{
+            withClientReturnReplacePQ(c, holder);
+          }
+        };
+      });
+    };
+  });
 }
-function withClientFlowPQ(caseObj, mount){
-  const q = radioQuestion({
+
+function withClientReturnReplacePQ(caseObj, mount){
+  const qWith = radioQuestion({
     title:'هل المنتج متواجد مع العميل؟',
     name:'pqWith',
     options:[ {value:'no',label:'لا'}, {value:'yes',label:'نعم'} ]
   });
-  mount.appendChild(q);
-  q.querySelectorAll('input[name="pqWith"]').forEach(r=>{
-    r.onchange=()=>{
-      pruneNextSiblings(q,'q-block'); resetRequired();
-      wipe(state.pq,['rr']);
-      state.pq.withClient = r.value==='yes'?'نعم':'لا';
-      renderMiniSummary();
-      if(r.value==='no'){ addResult(`يتم عمل تيكت شكوى بالتصنيف ${pqClass(caseObj.sub)}`); }
-      else {
-        const q2 = radioQuestion({
-          title:'هل العميل يؤيد أسترجاع ام استبدال؟',
-          name:'pqRR',
-          options:[ {value:'return',label:'استرجاع'}, {value:'replace',label:'استبدال'} ]
-        });
-        mount.appendChild(q2);
-        q2.querySelectorAll('input[name="pqRR"]').forEach(rr=>{
-          rr.onchange=()=>{
-            pruneNextSiblings(q2,'q-block'); resetRequired();
-            state.pq.rr = rr.value==='return'?'استرجاع':'استبدال';
-            renderMiniSummary();
+  mount.appendChild(qWith);
 
-            if(rr.value==='return'){ addResult(`يتم عمل تيكت شكوى بالتصنيف ${pqClass(caseObj.sub)}`); }
-            else{
-              addResult(replaceTextFor(caseObj.id));
-              addResult('ترحيل موعد التوصيل فترة واحدة.');
-              addResult('إضافة تعليق "خاص بشكوى".');
-              addResult(`يتم عمل تيكت شكوى بالتصنيف ${pqClass(caseObj.sub)} ويتم إضافة PDF بالشكوى.`);
-            }
-          };
-        });
-      }
+  qWith.querySelectorAll('input[name="pqWith"]').forEach(w=>{
+    w.onchange=()=>{
+      pruneNextSiblings(qWith,'q-block'); resetRequired();
+      wipe(state.pq,['rr']);
+      state.pq.withClient = (w.value==='yes')?'نعم':'لا';
+      renderMiniSummary();
+
+      if(w.value==='no'){ addResult(pqTicket(caseObj)); return; }
+
+      const qRR = radioQuestion({
+        title:'هل العميل يؤيد أسترجاع ام استبدال؟',
+        name:'pqRR',
+        options:[ {value:'return',label:'أسترجاع'}, {value:'replace',label:'أستبدال'} ]
+      });
+      mount.appendChild(qRR);
+
+      qRR.querySelectorAll('input[name="pqRR"]').forEach(rr=>{
+        rr.onchange=()=>{
+          pruneNextSiblings(qRR,'q-block'); resetRequired();
+          state.pq.rr = rr.value==='return'?'أسترجاع':'أستبدال';
+          renderMiniSummary();
+
+          if(rr.value==='return'){
+            addResult(pqTicket(caseObj));
+          }else{
+            addResult(replacementOrderLine(caseObj));
+            addResult('ترحيل موعد التوصيل فترة واحدة.');
+            addResult('إضافة تعليق "خاص بشكوى".');
+            addResult(`عمل تيكت شكوي  بالتصنيف ويتم أضافة PDF بالشكوي
+${pqTicket(caseObj)}`);
+          }
+        };
+      });
     };
   });
 }
 
 /* =========================
-   عناصر مفقودة (Missing Items) — وفق السكربت المُحدّث
+   عناصر مفقودة (Missing Items) — (بدون تغييرات على المنطق)
    ========================= */
 function buildMissing(){
   state.type='missing';
@@ -495,7 +482,6 @@ function buildMissing(){
             wipe(state.mi,['pay','fish','abd','source']);
             state.mi.inv = inv0.value==='yes'?'نعم':'لا'; renderMiniSummary();
 
-            /* ======== متحاسب في الفاتورة: YES ======== */
             if(inv0.value==='yes'){
               const qPay = radioQuestion({
                 title:'هل طريقة الدفع',
@@ -538,8 +524,6 @@ function buildMissing(){
                   }
                 };
               });
-
-            /* ======== غير متحاسب في الفاتورة: NO ======== */
             }else{
               const qPay2 = radioQuestion({
                 title:'هل طريقة الدفع',
@@ -554,7 +538,6 @@ function buildMissing(){
                   wipe(state.mi,['fish','abd','source']);
                   state.mi.pay = pp2.value==='prepaid'?'دفع مسبق "Online Payment"':'كاش - فيزا'; renderMiniSummary();
 
-                  /* --- غير متحاسب + دفع مسبق --- */
                   if(pp2.value==='prepaid'){
                     const qABD1 = radioQuestion({
                       title:'مراجعة الماجينتو وتيكت الأدمن داش بورد:',
@@ -580,8 +563,6 @@ function buildMissing(){
                         }
                       };
                     });
-
-                  /* --- غير متحاسب + كاش/فيزا --- */
                   }else{
                     const qSrc = radioQuestion({
                       title:'الطلب من:',
@@ -649,7 +630,7 @@ function buildMissing(){
 }
 
 /* =========================
-   خطأ فردي (WT) — حسب التغييرات المطلوبة
+   خطأ فردي (WT) — (بدون تغييرات إضافية)
    ========================= */
 function buildWT(){
   state.type='wt';
@@ -673,7 +654,6 @@ function buildWT(){
       state.wt.scenario = (r.value==='less')?'الحالة الأولى (وصول منتج بكميات اقل من المطلوب)':'الحالة الثانية (عدم الالتزام بكومنت في الطلب)';
       renderMiniSummary();
 
-      /* ===== الحالة الأولى: كمية أقل ===== */
       if(r.value==='less'){
         const qClient = radioQuestion({
           title:'نوع العميل :',
@@ -703,7 +683,6 @@ function buildWT(){
                 wipe(state.wt,['kind','invoiced','abd','rr']);
                 state.wt.pay = (pp.value==='prepaid')?'دفع مسبق "Online Payment"':'كاش - فيزا'; renderMiniSummary();
 
-                /* === دفع مسبق === */
                 if(pp.value==='prepaid'){
                   const qKindP = radioQuestion({
                     title:'هل المنتج',
@@ -733,7 +712,7 @@ function buildWT(){
                           inv.onchange=()=>{
                             pruneNextSiblings(qInvFish,'q-block'); resetRequired();
                             state.wt.invoiced = inv.value==='yes'?'نعم':'لا'; renderMiniSummary();
-                            addResult('Complaint Wrong Transaction – chef – less quantity'); // تيكت في الحالتين
+                            addResult('Complaint Wrong Transaction – chef – less quantity يتم عمل شكوي');
                           };
                         });
                       }else if(k.value==='meat'){
@@ -746,7 +725,6 @@ function buildWT(){
                   return;
                 }
 
-                /* === كاش / فيزا === */
                 const qKindC = radioQuestion({
                   title:'هل منتج:',
                   name:'wtKindC',
@@ -775,7 +753,7 @@ function buildWT(){
                         inv.onchange=()=>{
                           pruneNextSiblings(qInvFishC,'q-block'); resetRequired();
                           state.wt.invoiced = inv.value==='yes'?'نعم':'لا'; renderMiniSummary();
-                          addResult('Complaint Wrong Transaction – chef – less quantity');
+                          addResult('Complaint Wrong Transaction – chef – less quantity يتم عمل شكوي');
                         };
                       });
                       return;
@@ -820,9 +798,9 @@ function buildWT(){
                                 if(a.value==='partial'){
                                   addResult('عرض طلب جديد ببديل مناسب (New Order).');
                                 }else{
-                                  addResult('§        عمل طلب جديد بباقي الكمية.');
-                                  addResult('§        ترحيل موعد التوصيل فترة واحدة.');
-                                  addResult('§        إضافة تعليق "خاص بشكوى".');
+                                  addResult('عمل طلب جديد بباقي الكمية.');
+                                  addResult('ترحيل موعد التوصيل فترة واحدة.');
+                                  addResult('إضافة تعليق "خاص بشكوى".');
                                   addResult('Complaint Wrong Transaction – Chef –عدم الالتزام بالوزن');
                                   addResult('يتم إضافة PDF بالشكوى.');
                                 }
@@ -872,9 +850,9 @@ function buildWT(){
                               if(a.value==='partial'){
                                 addResult('عرض طلب جديد ببديل مناسب (New Order).');
                               }else{
-                                addResult('§        عمل طلب جديد بباقي الكمية.');
-                                addResult('§        ترحيل موعد التوصيل فترة واحدة.');
-                                addResult('§        إضافة تعليق "خاص بشكوى".');
+                                addResult('عمل طلب جديد بباقي الكمية.');
+                                addResult('ترحيل موعد التوصيل فترة واحدة.');
+                                addResult('إضافة تعليق "خاص بشكوى".');
                                 addResult('Complaint Wrong Transaction – Picker –Less Quantity');
                                 addResult('يتم إضافة PDF بالشكوى.');
                               }
@@ -892,7 +870,7 @@ function buildWT(){
         return;
       }
 
-      /* ===== الحالة الثانية: عدم الالتزام بكومنت ===== */
+      // الحالة الثانية (عدم الالتزام بكومنت) — (كما كانت)
       const qClient2 = radioQuestion({
         title:'نوع العميل :',
         name:'wtCClient',
@@ -993,7 +971,6 @@ function buildWT(){
                     return;
                   }
 
-                  // ✅ منتجات أخرى + كاش/فيزا: إزالة سؤال "هل تم المحاسبة..." في هذا المسار فقط
                   const qRROther = radioQuestion({
                     title:'هل تريد استرجاع ام استبدال المنتج؟',
                     name:'wtCRROther',
@@ -1030,7 +1007,7 @@ function buildWT(){
 }
 
 /* =========================
-   تأخير توصيل (Delay)
+   تأخير توصيل (Delay) — (بدون تغييرات)
    ========================= */
 function buildDelay(){
   state.type='delay';
@@ -1061,7 +1038,6 @@ function buildDelay(){
    إنهاء الشكوى + Reset
    ========================= */
 function clearComplaintInputs(){
-  // لم يعد هناك حقول سوى otherNotes
   const el = document.getElementById('otherNotes');
   if(el){ el.value=''; el.classList.remove('invalid'); }
 }
@@ -1087,6 +1063,7 @@ function resetAll(){
 /* =========================
    التحكم العام في اختيار نوع الشكوى
    ========================= */
+/* ربط مباشر */
 document.querySelectorAll('input[name="ctype"]').forEach(input=>{
   input.addEventListener('change', (e)=>{
     clear(questionsEl); resetRequired();
@@ -1099,6 +1076,19 @@ document.querySelectorAll('input[name="ctype"]').forEach(input=>{
     else if(v==='delay') buildDelay();
   });
 });
+/* Event delegation احتياطي لو السكربت اتحمل قبل الـHTML */
+document.addEventListener('change', (e)=>{
+  const t = e.target;
+  if(!t || t.name!=='ctype') return;
+  clear(questionsEl); resetRequired();
+  resetStatePart('pq'); resetStatePart('mi'); resetStatePart('wt'); resetStatePart('delay');
+
+  const v = t.value;
+  if(v==='pq')      buildPQ();
+  else if(v==='missing') buildMissing();
+  else if(v==='wt') buildWT();
+  else if(v==='delay') buildDelay();
+});
 
 /* =========================
    أزرار الخلاصة
@@ -1108,7 +1098,6 @@ btnEnd && btnEnd.addEventListener('click', ()=>{
 });
 
 btnCopy && btnCopy.addEventListener('click', async()=>{
-  // تم تعطيل التحقق من “بيانات الشكوى” — فقط تحقق خاص بحالة delay
   if(state.type==='delay' && !state.delay.interval){
     const el = document.getElementById('delayInterval');
     markInvalidEl(el, true);
@@ -1126,13 +1115,12 @@ btnCopy && btnCopy.addEventListener('click', async()=>{
 });
 
 btnSave && btnSave.addEventListener('click', ()=>{
-  // لم يعد هناك شرط Customer Number
   if(state.type==='delay' && !state.delay.interval){
     const el = document.getElementById('delayInterval');
     markInvalidEl(el, true); el?.focus();
     showToast('لا يمكن حفظ المسودة — أدخل Time Interval.', 'error'); return;
   }
-  if(!confirm('هل تريد حفظ الخطوات كمسودة؟')) return;
+  if(!confirm('هل تريد حفظ المسودة كمسودة؟')) return;
   saveCurrentDraft();
 });
 
@@ -1202,7 +1190,7 @@ function saveCurrentDraft(){
   const data = {
     id: 'DR_'+Date.now(),
     ts: Date.now(),
-    customer: '', // لم يعد هناك رقم عميل
+    customer: '',
     fields: {
       otherNotes: FIELDS.otherNotes(),
     },
