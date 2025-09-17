@@ -393,7 +393,7 @@ function selectPQCase(c, node){
       r.onchange=()=>{
         pruneNextSiblings(q,'q-block'); resetRequired();
         wipe(state.pq,['pay','product','withClient','rr']);
-        state.pq.client = (r.value==='branch')?'عميل فرع':'عميل ديليفري'; // ✅ إصلاح متغير r
+        state.pq.client = (r.value==='branch')?'عميل فرع':'عميل ديليفري'; // إصلاح
         renderMiniSummary();
         if(r.value==='branch'){ addResult(`يتم عمل تيكت شكوى بالتصنيف ${pqClass(c.sub)}`); }
         else{
@@ -733,7 +733,7 @@ function buildWT(){
                           inv.onchange=()=>{
                             pruneNextSiblings(qInvFish,'q-block'); resetRequired();
                             state.wt.invoiced = inv.value==='yes'?'نعم':'لا'; renderMiniSummary();
-                            addResult('Complaint Wrong Transaction – chef – less quantity'); // تيكت بالتصنيف في الحالتين
+                            addResult('Complaint Wrong Transaction – chef – less quantity'); // تيكت في الحالتين
                           };
                         });
                       }else if(k.value==='meat'){
@@ -775,7 +775,7 @@ function buildWT(){
                         inv.onchange=()=>{
                           pruneNextSiblings(qInvFishC,'q-block'); resetRequired();
                           state.wt.invoiced = inv.value==='yes'?'نعم':'لا'; renderMiniSummary();
-                          addResult('Complaint Wrong Transaction – chef – less quantity'); // نفس النتيجة
+                          addResult('Complaint Wrong Transaction – chef – less quantity');
                         };
                       });
                       return;
@@ -993,17 +993,7 @@ function buildWT(){
                     return;
                   }
 
-                  // منتجات أخرى + كاش: نسأل المحاسبة + استرجاع/استبدال
-                  const qInvOtherC = radioQuestion({
-                    title:'هل تم المحاسبة في الفاتورة على الكمية كاملة؟',
-                    name:'wtInvOtherC',
-                    options:[ {value:'yes',label:'نعم'}, {value:'no',label:'لا'} ]
-                  });
-                  questionsEl.appendChild(qInvOtherC);
-                  qInvOtherC.querySelectorAll('input[name="wtInvOtherC"]').forEach(inv=>{
-                    inv.onchange=()=>{ state.wt.invoiced = inv.value==='yes'?'نعم':'لا'; renderMiniSummary(); };
-                  });
-
+                  // ✅ منتجات أخرى + كاش/فيزا: إزالة سؤال "هل تم المحاسبة..." في هذا المسار فقط
                   const qRROther = radioQuestion({
                     title:'هل تريد استرجاع ام استبدال المنتج؟',
                     name:'wtCRROther',
@@ -1291,6 +1281,15 @@ function loadDraftByIdFromURL(){
     showToast('تم فتح المسودة — يمكنك المتابعة أو التعديل.', 'success');
   }catch{}
 }
+
+/* ===== تحديث الخلاصة مباشرة عند كتابة الملاحظات (Live Notes) ===== */
+(function hookLiveNotes(){
+  const el = document.getElementById('otherNotes');
+  if(!el) return;
+  const handler = ()=>{ renderMiniSummary(); };
+  el.addEventListener('input', handler);
+  el.addEventListener('change', handler);
+})();
 
 /* تهيئة */
 renderDrafts();
