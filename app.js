@@ -157,9 +157,6 @@ function buildCopyText(){
     if(state.wt.invoiced) steps.push(`هل تمت المحاسبة كاملة؟ → ${state.wt.invoiced}`);
     if(state.wt.abd)      steps.push(`مراجعة الماجينتو/ABD → ${state.wt.abd}`);
     if(state.wt.rr)       steps.push(`اختيار العميل: ${state.wt.rr}`);
-  }else if(state.type==='delay'){
-    steps.push('نوع الشكوى: تأخير توصيل');
-    if(state.delay.interval) steps.push(`Time Interval: ${state.delay.interval}`);
   }
 
   const reqs = [...(requiredEl?.querySelectorAll('.result')||[])].map(el=>el.textContent.trim()).filter(Boolean);
@@ -197,13 +194,12 @@ const state = {
   pq: { caseId:null,caseLabel:null,client:null,pay:null,product:null,withClient:null,rr:null },
   mi: { client:null,pay:null,fish:null,inv:null,abd:null, source:null },
   wt: { scenario:null,client:null,pay:null,kind:null,invoiced:null,abd:null,rr:null },
-  delay: { interval:null }
+  // تمت إزالة delay
 };
 function resetStatePart(key){
   if(key==='pq') state.pq = {caseId:null,caseLabel:null,client:null,pay:null,product:null,withClient:null,rr:null};
   if(key==='mi') state.mi = {client:null,pay:null,fish:null,inv:null,abd:null, source:null};
   if(key==='wt') state.wt = {scenario:null,client:null,pay:null,kind:null,invoiced:null,abd:null,rr:null};
-  if(key==='delay') state.delay = {interval:null};
 }
 
 /* =========================
@@ -248,9 +244,6 @@ function renderMiniSummary(){
     if(state.wt.invoiced) steps.push(`هل تمت المحاسبة كاملة؟ → ${state.wt.invoiced}`);
     if(state.wt.abd)      steps.push(`مراجعة الماجينتو/ABD → ${state.wt.abd}`);
     if(state.wt.rr)       steps.push(`اختيار العميل: ${state.wt.rr}`);
-  }else if(state.type==='delay'){
-    steps.push('نوع الشكوى: تأخير توصيل');
-    if(state.delay.interval) steps.push(`Time Interval: ${state.delay.interval}`);
   }
 
   if(steps.length){
@@ -272,8 +265,8 @@ function renderMiniSummary(){
 
 /* تعريف الحالات */
 const PQ_CASES = [
-    {id:'mold',       label:'عفن',         mode:'flow',    sub:'عفن'},
-    {id:'hyg',        label:'هايجين"نظافة عامة"', mode:'flow', sub:'هايجين"نظافة عامة"'},
+  {id:'mold',       label:'عفن',         mode:'flow',    sub:'عفن'},
+  {id:'hyg',        label:'هايجين"نظافة عامة"', mode:'flow', sub:'هايجين"نظافة عامة"'},
   {id:'impurities', label:'شوائب بالمنتج',mode:'flow',    sub:'شوائب بالمنتج'},
   {id:'taste',      label:'رائحة و طعم و لون', mode:'flow', sub:'رائحة و طعم و لون'},
   {id:'taswiya',    label:'تسوية',       mode:'flow',    sub:'تسوية',                    fishGate:true},
@@ -286,7 +279,6 @@ const PQ_CASES = [
   {id:'broken',     label:'مكسور/مدهوس/مفتوح', mode:'flow', sub:'مكسور/ مدهوس / مفتوح'},
   {id:'salty',      label:'ملح زائد',    mode:'flow',    sub:'ملح زائد',                  fishGate:true},
   {id:'expired',    label:'منتهي الصلاحية', mode:'flow',  sub:'منتهي الصلاحية'},
-  
 ];
 
 /* مولد نص التصنيف */
@@ -296,7 +288,7 @@ function pqTicket(c){
 }
 
 /* نص “عمل طلب جديد” — موحد بنص: بنفس الكمية في الطلب الاساسي */
-function replacementOrderLine(/* c */){
+function replacementOrderLine(){
   return 'عمل طلب جديد بنفس الكمية في الطلب الاساسي.';
 }
 
@@ -446,7 +438,7 @@ ${pqTicket(caseObj)}`);
 }
 
 /* =========================
-   عناصر مفقودة (Missing Items) — (بدون تغييرات على المنطق)
+   عناصر مفقودة (Missing Items)
    ========================= */
 function buildMissing(){
   state.type='missing';
@@ -629,7 +621,7 @@ function buildMissing(){
 }
 
 /* =========================
-   خطأ فردي (WT) — (بدون تغييرات إضافية)
+   خطأ فردي (WT)
    ========================= */
 function buildWT(){
   state.type='wt';
@@ -869,7 +861,7 @@ function buildWT(){
         return;
       }
 
-      // الحالة الثانية (عدم الالتزام بكومنت) — (كما كانت)
+      // الحالة الثانية (عدم الالتزام بكومنت)
       const qClient2 = radioQuestion({
         title:'نوع العميل :',
         name:'wtCClient',
@@ -1006,34 +998,6 @@ function buildWT(){
 }
 
 /* =========================
-   تأخير توصيل (Delay) — (بدون تغييرات)
-   ========================= */
-function buildDelay(){
-  state.type='delay';
-  resetStatePart('delay');
-  clear(questionsEl); resetRequired(); show(qaCard,true);
-
-  const q = inputQuestion({
-    title:'الفترة الزمنية للطلب (Time Interval)',
-    name:'delayInterval',
-    placeholder:'مثال: 2:00 PM - 5:00 PM'
-  });
-  questionsEl.appendChild(q);
-
-  const input = q.querySelector('#delayInterval');
-  if(input){
-    input.addEventListener('input', ()=>{
-      if(input.value.trim()) input.classList.remove('invalid');
-      state.delay.interval = input.value.trim();
-      renderMiniSummary();
-    });
-  }
-
-  addResult('يتم عمل تيكت شكوى بالتصنيف Complaint - Delivery Lateness - تأخير توصيل');
-  renderMiniSummary();
-}
-
-/* =========================
    إنهاء الشكوى + Reset
    ========================= */
 function clearComplaintInputs(){
@@ -1042,7 +1006,7 @@ function clearComplaintInputs(){
 }
 function resetAll(){
   state.type=null;
-  resetStatePart('pq'); resetStatePart('mi'); resetStatePart('wt'); resetStatePart('delay');
+  resetStatePart('pq'); resetStatePart('mi'); resetStatePart('wt');
   clear(questionsEl); resetRequired();
 
   document.querySelectorAll('input[name="ctype"]').forEach(r=>{ r.checked = false; });
@@ -1066,13 +1030,12 @@ function resetAll(){
 document.querySelectorAll('input[name="ctype"]').forEach(input=>{
   input.addEventListener('change', (e)=>{
     clear(questionsEl); resetRequired();
-    resetStatePart('pq'); resetStatePart('mi'); resetStatePart('wt'); resetStatePart('delay');
+    resetStatePart('pq'); resetStatePart('mi'); resetStatePart('wt');
 
     const v = e.target.value;
     if(v==='pq')      buildPQ();
     else if(v==='missing') buildMissing();
     else if(v==='wt') buildWT();
-    else if(v==='delay') buildDelay();
   });
 });
 /* Event delegation احتياطي لو السكربت اتحمل قبل الـHTML */
@@ -1080,13 +1043,12 @@ document.addEventListener('change', (e)=>{
   const t = e.target;
   if(!t || t.name!=='ctype') return;
   clear(questionsEl); resetRequired();
-  resetStatePart('pq'); resetStatePart('mi'); resetStatePart('wt'); resetStatePart('delay');
+  resetStatePart('pq'); resetStatePart('mi'); resetStatePart('wt');
 
   const v = t.value;
   if(v==='pq')      buildPQ();
   else if(v==='missing') buildMissing();
   else if(v==='wt') buildWT();
-  else if(v==='delay') buildDelay();
 });
 
 /* =========================
@@ -1097,14 +1059,6 @@ btnEnd && btnEnd.addEventListener('click', ()=>{
 });
 
 btnCopy && btnCopy.addEventListener('click', async()=>{
-  if(state.type==='delay' && !state.delay.interval){
-    const el = document.getElementById('delayInterval');
-    markInvalidEl(el, true);
-    el?.focus();
-    showToast('من فضلك أدخل Time Interval قبل نسخ الخلاصة.', 'error');
-    return;
-  }
-
   try{
     const text = buildCopyText();
     if(!text?.trim()){ showToast('الخلاصة فارغة حاليًا.', 'error'); return; }
@@ -1114,11 +1068,6 @@ btnCopy && btnCopy.addEventListener('click', async()=>{
 });
 
 btnSave && btnSave.addEventListener('click', ()=>{
-  if(state.type==='delay' && !state.delay.interval){
-    const el = document.getElementById('delayInterval');
-    markInvalidEl(el, true); el?.focus();
-    showToast('لا يمكن حفظ المسودة — أدخل Time Interval.', 'error'); return;
-  }
   if(!confirm('هل تريد حفظ المسودة كمسودة؟')) return;
   saveCurrentDraft();
 });
@@ -1174,7 +1123,7 @@ btnSave && btnSave.addEventListener('click', ()=>{
 })();
 
 /* =========================
-   Drafts: حفظ/عرض/بحث/حذف (آمن حتى لو عناصر الـDrafts غير موجودة)
+   Drafts: حفظ/عرض/بحث/حذف
    ========================= */
 function readDrafts(){ try{ return JSON.parse(localStorage.getItem(DRAFTS_KEY) || '[]'); } catch{ return []; } }
 function writeDrafts(list){ try{ localStorage.setItem(DRAFTS_KEY, JSON.stringify(list)); }catch{} }
@@ -1193,7 +1142,7 @@ function saveCurrentDraft(){
     fields: {
       otherNotes: FIELDS.otherNotes(),
     },
-    type: state.type,
+    type: state.type,           // لو كانت مسودة قديمة نوعها delay، مش هنرندر خطوات خاصة بيها
     state: JSON.parse(JSON.stringify(state)),
     required: currentResultsArray(),
     brand: document.body.getAttribute('data-brand') || ''
@@ -1254,12 +1203,13 @@ function loadDraftByIdFromURL(){
     const el = document.getElementById('otherNotes');
     if(el) el.value = d.fields?.otherNotes ?? '';
 
-    state.type = d.type || null;
+    // لو كانت مسودة قديمة فيها حقول delay تجاهلها بأمان
+    state.type = (d.type==='delay') ? null : (d.type || null);
     if(d.state){
       state.pq = d.state.pq || state.pq;
       state.mi = d.state.mi || state.mi;
       state.wt = d.state.wt || state.wt;
-      state.delay = d.state.delay || state.delay;
+      // نتجاهل d.state.delay إن وجد
     }
 
     resetRequired();
