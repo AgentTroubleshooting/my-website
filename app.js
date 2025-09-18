@@ -272,20 +272,21 @@ function renderMiniSummary(){
 
 /* تعريف الحالات */
 const PQ_CASES = [
+    {id:'mold',       label:'عفن',         mode:'flow',    sub:'عفن'},
+    {id:'hyg',        label:'هايجين"نظافة عامة"', mode:'flow', sub:'هايجين"نظافة عامة"'},
+  {id:'impurities', label:'شوائب بالمنتج',mode:'flow',    sub:'شوائب بالمنتج'},
+  {id:'taste',      label:'رائحة و طعم و لون', mode:'flow', sub:'رائحة و طعم و لون'},
+  {id:'taswiya',    label:'تسوية',       mode:'flow',    sub:'تسوية',                    fishGate:true},
+  {id:'fat',        label:'دهون زائده',  mode:'flow',    sub:'دهون زائدة'},
+  {id:'spoiled',    label:'فاسد',        mode:'flow',    sub:'فاسد'},
+  {id:'melted',     label:'سايح',        mode:'flow',    sub:'سايح'},
+  {id:'notfresh',   label:'غير طازج او فريش', mode:'flow',sub:'غير طازج غير فريش'},
   {id:'appliances', label:'أجهزة منزلية', mode:'instant', sub:'أجهزة منزلية'},
   {id:'hotfood',    label:'هوت فوود',    mode:'hotfood'},
-  {id:'taswiya',    label:'تسوية',       mode:'flow',    sub:'تسوية',                    fishGate:true,  replaceSame:false},
-  {id:'fat',        label:'دهون زائده',  mode:'flow',    sub:'دهون زائدة',               replaceSame:false},
-  {id:'taste',      label:'رائحة و طعم و لون', mode:'flow', sub:'رائحة و طعم و لون',    replaceSame:false},
-  {id:'melted',     label:'سايح',        mode:'flow',    sub:'سايح',                      replaceSame:false},
-  {id:'impurities', label:'شوائب بالمنتج',mode:'flow',    sub:'شوائب بالمنتج',            replaceSame:false},
-  {id:'mold',       label:'عفن',         mode:'flow',    sub:'عفن',                       replaceSame:true},
-  {id:'notfresh',   label:'غير طازج او فريش', mode:'flow',sub:'غير طازج او فريش',        replaceSame:false},
-  {id:'spoiled',    label:'فاسد',        mode:'flow',    sub:'فاسد',                      replaceSame:true},
-  {id:'broken',     label:'مكسور/مدهوس/مفتوح', mode:'flow', sub:'مكسور/ مدهوس / مفتوح', replaceSame:false},
-  {id:'salty',      label:'ملح زائد',    mode:'flow',    sub:'ملح زائد',                  fishGate:true,  replaceSame:false},
-  {id:'expired',    label:'منتهي الصلاحية', mode:'flow',  sub:'منتهي الصلاحية',           replaceSame:true},
-  {id:'hyg',        label:'هايجين"نظافة عامة"', mode:'flow', sub:'هايجين"نظافة عامة"',   replaceSame:true},
+  {id:'broken',     label:'مكسور/مدهوس/مفتوح', mode:'flow', sub:'مكسور/ مدهوس / مفتوح'},
+  {id:'salty',      label:'ملح زائد',    mode:'flow',    sub:'ملح زائد',                  fishGate:true},
+  {id:'expired',    label:'منتهي الصلاحية', mode:'flow',  sub:'منتهي الصلاحية'},
+  
 ];
 
 /* مولد نص التصنيف */
@@ -294,11 +295,9 @@ function pqTicket(c){
   return `Complaint – Product Quality – ${c.sub}`;
 }
 
-/* نص “عمل طلب جديد” حسب الحالة */
-function replacementOrderLine(c){
-  return c.replaceSame
-    ? 'عمل طلب جديد بنفس الكمية في الطلب الاساسي.'
-    : 'عمل طلب جديد بباقي الكمية.';
+/* نص “عمل طلب جديد” — موحد بنص: بنفس الكمية في الطلب الاساسي */
+function replacementOrderLine(/* c */){
+  return 'عمل طلب جديد بنفس الكمية في الطلب الاساسي.';
 }
 
 /* البناء الأساسي لقسم جودة المنتج */
@@ -434,7 +433,7 @@ function withClientReturnReplacePQ(caseObj, mount){
           if(rr.value==='return'){
             addResult(pqTicket(caseObj));
           }else{
-            addResult(replacementOrderLine(caseObj));
+            addResult(replacementOrderLine());
             addResult('ترحيل موعد التوصيل فترة واحدة.');
             addResult('إضافة تعليق "خاص بشكوى".');
             addResult(`عمل تيكت شكوي  بالتصنيف ويتم أضافة PDF بالشكوي
