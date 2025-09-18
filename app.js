@@ -147,7 +147,7 @@ function buildCopyText(){
     if(state.mi.pay)    steps.push(`طريقة الدفع: ${state.mi.pay}`);
     if(state.mi.fish)   steps.push(`نوع المنتج: ${state.mi.fish}`);
     if(state.mi.source) steps.push(`مصدر الطلب: ${state.mi.source}`);
-    if(state.mi.abd)    steps.push(`مراجعة الماجينتو/ABD → ${state.mi.abd}`);
+    if(state.mi.abd)    steps.push(`مراجعة الداش بورد/ABD → ${state.mi.abd}`);
   }else if(state.type==='wt'){
     steps.push('نوع الشكوى: خطأ فردي');
     if(state.wt.scenario) steps.push(`اختر الحالة: ${state.wt.scenario}`);
@@ -155,7 +155,7 @@ function buildCopyText(){
     if(state.wt.pay)      steps.push(`طريقة الدفع: ${state.wt.pay}`);
     if(state.wt.kind)     steps.push(`هل منتج: ${state.wt.kind}`);
     if(state.wt.invoiced) steps.push(`هل تمت المحاسبة كاملة؟ → ${state.wt.invoiced}`);
-    if(state.wt.abd)      steps.push(`مراجعة الماجينتو/ABD → ${state.wt.abd}`);
+    if(state.wt.abd)      steps.push(`مراجعة الداش بورد/ABD → ${state.wt.abd}`);
     if(state.wt.rr)       steps.push(`اختيار العميل: ${state.wt.rr}`);
   }
 
@@ -234,7 +234,7 @@ function renderMiniSummary(){
     if(state.mi.pay)    steps.push(`طريقة الدفع: ${state.mi.pay}`);
     if(state.mi.fish)   steps.push(`نوع المنتج: ${state.mi.fish}`);
     if(state.mi.source) steps.push(`مصدر الطلب: ${state.mi.source}`);
-    if(state.mi.abd)    steps.push(`مراجعة الماجينتو/ABD → ${state.mi.abd}`);
+    if(state.mi.abd)    steps.push(`مراجعة الداش بورد/ABD → ${state.mi.abd}`);
   }else if(state.type==='wt'){
     steps.push('نوع الشكوى: خطأ فردي');
     if(state.wt.scenario) steps.push(`اختر الحالة: ${state.wt.scenario}`);
@@ -242,7 +242,7 @@ function renderMiniSummary(){
     if(state.wt.pay)      steps.push(`طريقة الدفع: ${state.wt.pay}`);
     if(state.wt.kind)     steps.push(`هل منتج: ${state.wt.kind}`);
     if(state.wt.invoiced) steps.push(`هل تمت المحاسبة كاملة؟ → ${state.wt.invoiced}`);
-    if(state.wt.abd)      steps.push(`مراجعة الماجينتو/ABD → ${state.wt.abd}`);
+    if(state.wt.abd)      steps.push(`مراجعة الداش بورد/ABD → ${state.wt.abd}`);
     if(state.wt.rr)       steps.push(`اختيار العميل: ${state.wt.rr}`);
   }
 
@@ -531,7 +531,7 @@ function buildMissing(){
 
                   if(pp2.value==='prepaid'){
                     const qABD1 = radioQuestion({
-                      title:'مراجعة الماجينتو وتيكت الأدمن داش بورد:',
+                      title:'مراجعة الداش بورد وتيكت الأدمن داش بورد:',
                       name:'miABD1',
                       options:[
                         {value:'deleted',    label:'تم الحذف من خلال قسم الأدمن داش بورد'},
@@ -570,7 +570,7 @@ function buildMissing(){
                         renderMiniSummary();
 
                         const qABD2 = radioQuestion({
-                          title:'مراجعة الماجينتو وتيكت الأدمن داش بورد:',
+                          title:'مراجعة الداش بورد وتيكت الأدمن داش بورد:',
                           name:'miABD2',
                           options:[
                             {value:'deleted',    label:'تم الحذف من خلال قسم الأدمن داش بورد'},
@@ -775,7 +775,7 @@ function buildWT(){
                               title:'اختر الحالة:',
                               name:'wtABDMeat',
                               options:[
-                                {value:'partial',  label:'الحالة الاولي : يتم مراجعة الماجينتو وتيكت الأدمن داش بورد للتأكد من ما اذا كان تم أرسال الكمية المتاحة لعدم توافر كامل الكمية'},
+                                {value:'partial',  label:'الحالة الاولي : يتم مراجعة الداش بورد وتيكت الأدمن داش بورد للتأكد من ما اذا كان تم أرسال الكمية المتاحة لعدم توافر كامل الكمية'},
                                 {value:'nochange', label:'الحالة الثانية : لا يوجد اي تعديل علي المنتج و الكمية من خلال الABD'}
                               ]
                             });
@@ -827,7 +827,7 @@ function buildWT(){
                             title:'اختر الحالة:',
                             name:'wtABDOther',
                             options:[
-                              {value:'partial',  label:'الحالة الاولي : يتم مراجعة الماجينتو وتيكت الأدمن داش بورد للتأكد من ما اذا كان تم أرسال الكمية المتاحة لعدم توافر كامل الكمية'},
+                              {value:'partial',  label:'الحالة الاولي : يتم مراجعة الداش بورد وتيكت الأدمن داش بورد للتأكد من ما اذا كان تم أرسال الكمية المتاحة لعدم توافر كامل الكمية'},
                               {value:'nochange', label:'الحالة الثانية : لا يوجد اي تعديل علي المنتج و الكمية من خلال الABD'}
                             ]
                           });
