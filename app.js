@@ -147,7 +147,7 @@ function buildCopyText(){
     if(state.mi.pay)    steps.push(`طريقة الدفع: ${state.mi.pay}`);
     if(state.mi.fish)   steps.push(`نوع المنتج: ${state.mi.fish}`);
     if(state.mi.source) steps.push(`مصدر الطلب: ${state.mi.source}`);
-    if(state.mi.abd)    steps.push(`مراجعة الداش بورد/ABD → ${state.mi.abd}`);
+    if(state.mi.abd)    steps.push(`مراجعة الماجينتو/ABD → ${state.mi.abd}`);
   }else if(state.type==='wt'){
     steps.push('نوع الشكوى: خطأ فردي');
     if(state.wt.scenario) steps.push(`اختر الحالة: ${state.wt.scenario}`);
@@ -155,7 +155,7 @@ function buildCopyText(){
     if(state.wt.pay)      steps.push(`طريقة الدفع: ${state.wt.pay}`);
     if(state.wt.kind)     steps.push(`هل منتج: ${state.wt.kind}`);
     if(state.wt.invoiced) steps.push(`هل تمت المحاسبة كاملة؟ → ${state.wt.invoiced}`);
-    if(state.wt.abd)      steps.push(`مراجعة الداش بورد/ABD → ${state.wt.abd}`);
+    if(state.wt.abd)      steps.push(`مراجعة الماجينتو/ABD → ${state.wt.abd}`);
     if(state.wt.rr)       steps.push(`اختيار العميل: ${state.wt.rr}`);
   }
 
@@ -234,7 +234,7 @@ function renderMiniSummary(){
     if(state.mi.pay)    steps.push(`طريقة الدفع: ${state.mi.pay}`);
     if(state.mi.fish)   steps.push(`نوع المنتج: ${state.mi.fish}`);
     if(state.mi.source) steps.push(`مصدر الطلب: ${state.mi.source}`);
-    if(state.mi.abd)    steps.push(`مراجعة الداش بورد/ABD → ${state.mi.abd}`);
+    if(state.mi.abd)    steps.push(`مراجعة الماجينتو/ABD → ${state.mi.abd}`);
   }else if(state.type==='wt'){
     steps.push('نوع الشكوى: خطأ فردي');
     if(state.wt.scenario) steps.push(`اختر الحالة: ${state.wt.scenario}`);
@@ -242,7 +242,7 @@ function renderMiniSummary(){
     if(state.wt.pay)      steps.push(`طريقة الدفع: ${state.wt.pay}`);
     if(state.wt.kind)     steps.push(`هل منتج: ${state.wt.kind}`);
     if(state.wt.invoiced) steps.push(`هل تمت المحاسبة كاملة؟ → ${state.wt.invoiced}`);
-    if(state.wt.abd)      steps.push(`مراجعة الداش بورد/ABD → ${state.wt.abd}`);
+    if(state.wt.abd)      steps.push(`مراجعة الماجينتو/ABD → ${state.wt.abd}`);
     if(state.wt.rr)       steps.push(`اختيار العميل: ${state.wt.rr}`);
   }
 
@@ -531,7 +531,7 @@ function buildMissing(){
 
                   if(pp2.value==='prepaid'){
                     const qABD1 = radioQuestion({
-                      title:'مراجعة الداش بورد وتيكت الأدمن داش بورد:',
+                      title:'مراجعة الماجينتو وتيكت الأدمن داش بورد:',
                       name:'miABD1',
                       options:[
                         {value:'deleted',    label:'تم الحذف من خلال قسم الأدمن داش بورد'},
@@ -570,7 +570,7 @@ function buildMissing(){
                         renderMiniSummary();
 
                         const qABD2 = radioQuestion({
-                          title:'مراجعة الداش بورد وتيكت الأدمن داش بورد:',
+                          title:'مراجعة الماجينتو وتيكت الأدمن داش بورد:',
                           name:'miABD2',
                           options:[
                             {value:'deleted',    label:'تم الحذف من خلال قسم الأدمن داش بورد'},
@@ -775,7 +775,7 @@ function buildWT(){
                               title:'اختر الحالة:',
                               name:'wtABDMeat',
                               options:[
-                                {value:'partial',  label:'الحالة الاولي : يتم مراجعة الداش بورد وتيكت الأدمن داش بورد للتأكد من ما اذا كان تم أرسال الكمية المتاحة لعدم توافر كامل الكمية'},
+                                {value:'partial',  label:'الحالة الاولي : يتم مراجعة الماجينتو وتيكت الأدمن داش بورد للتأكد من ما اذا كان تم أرسال الكمية المتاحة لعدم توافر كامل الكمية'},
                                 {value:'nochange', label:'الحالة الثانية : لا يوجد اي تعديل علي المنتج و الكمية من خلال الABD'}
                               ]
                             });
@@ -827,7 +827,7 @@ function buildWT(){
                             title:'اختر الحالة:',
                             name:'wtABDOther',
                             options:[
-                              {value:'partial',  label:'الحالة الاولي : يتم مراجعة الداش بورد وتيكت الأدمن داش بورد للتأكد من ما اذا كان تم أرسال الكمية المتاحة لعدم توافر كامل الكمية'},
+                              {value:'partial',  label:'الحالة الاولي : يتم مراجعة الماجينتو وتيكت الأدمن داش بورد للتأكد من ما اذا كان تم أرسال الكمية المتاحة لعدم توافر كامل الكمية'},
                               {value:'nochange', label:'الحالة الثانية : لا يوجد اي تعديل علي المنتج و الكمية من خلال الABD'}
                             ]
                           });
@@ -876,128 +876,242 @@ function buildWT(){
           state.wt.client = (c.value==='branch')?'عميل فرع':'عميل ديليفري'; renderMiniSummary();
 
           if(c.value==='branch'){ addResult('Complaint Wrong Transaction – chef –  عدم الالتزام بكومنت'); return; }
-
-          const qPay2 = radioQuestion({
+          // عميل ديليفري → متابعة الأسئلة
+          // سؤال طريقة الدفع
+          const qPay = radioQuestion({
             title:'هل طريقة الدفع',
             name:'wtCPay',
-            options:[ {value:'prepaid',label:'دفع مسبق "Online Payment "'}, {value:'cash',label:'كاش - فيزا'} ]
+            options:[
+              {value:'online', label:'دفع مسبق "Online Payment"'},
+              {value:'cash',   label:'كاش - فيزا'}
+            ]
           });
-          questionsEl.appendChild(qPay2);
+          questionsEl.appendChild(qPay);
+          qPay.querySelectorAll('input[name="wtCPay"]').forEach(p=>{
+            p.onchange=()=>{
+              pruneNextSiblings(qPay,'q-block'); resetRequired();
+              state.wt.pay = (p.value==='online')?'دفع مسبق':'كاش/فيزا'; renderMiniSummary();
 
-          qPay2.querySelectorAll('input[name="wtCPay"]').forEach(pp=>{
-            pp.onchange=()=>{
-              pruneNextSiblings(qPay2,'q-block'); resetRequired();
-              wipe(state.wt,['kind','invoiced','abd','rr']);
-              state.wt.pay = (pp.value==='prepaid')?'دفع مسبق "Online Payment"':'كاش - فيزا'; renderMiniSummary();
+              // دالة مساعده: خطوات الاستبدال القياسية + PDF + اعتذار
+              function replacementSteps(target){
+                addResult('عمل طلب جديد بالمنتج.');
+                addResult('ترحيل موعد التوصيل فترة واحدة.');
+                addResult("إضافة تعليق 'خاص بشكوى'.");
+                addResult(`عمل تيكت شكوي بالتصنيف ويتم أضافة PDF بالشكوي ${target}–عدم الالتزام بكومنت`);
+              }
 
-              if(pp.value==='prepaid'){
-                const qKindCP = radioQuestion({
+              // دالة مساعده: سؤال نوع المنتج
+              function askKind(kindName, handlers){
+                const qKind = radioQuestion({
                   title:'هل المنتج',
-                  name:'wtKindCP',
+                  name: kindName,
                   options:[
                     {value:'fish', label:'سمك'},
-                    {value:'meat', label:'لحوم / دواجن – جبن  بالوزن'},
+                    {value:'meat', label:'لحوم / دواجن – جبن بالوزن'},
                     {value:'other',label:'منتجات أخري'}
                   ]
                 });
-                questionsEl.appendChild(qKindCP);
-
-                qKindCP.querySelectorAll('input[name="wtKindCP"]').forEach(k=>{
+                questionsEl.appendChild(qKind);
+                qKind.querySelectorAll(`input[name="${kindName}"]`).forEach(k=>{
                   k.onchange=()=>{
-                    pruneNextSiblings(qKindCP,'q-block'); resetRequired();
-                    wipe(state.wt,['rr','invoiced','abd']);
-                    state.wt.kind = (k.value==='fish')?'سمك':(k.value==='meat'?'لحوم / دواجن – جبن  بالوزن':'منتجات أخرى'); renderMiniSummary();
-
-                    if(k.value==='fish'){ addResult('Complaint Wrong Transaction – chef –  عدم الالتزام بكومنت'); }
-                    else if(k.value==='meat'){ addResult('Complaint Wrong Transaction – chef –  عدم الالتزام بكومنت'); }
-                    else{ addResult('Complaint Wrong Transaction – Picker –عدم الالتزام بكومنت'); }
+                    pruneNextSiblings(qKind,'q-block'); resetRequired();
+                    state.wt.kind = (k.value==='fish')?'سمك':(k.value==='meat'?'لحوم/دواجن/جبن بالوزن':'منتجات أخرى'); renderMiniSummary();
+                    handlers[k.value]();
                   };
                 });
-                return;
               }
 
-              const qKindCC = radioQuestion({
-                title:'هل منتج:',
-                name:'wtKindCC',
-                options:[
-                  {value:'fish', label:'سمك'},
-                  {value:'meat', label:'لحوم – جبن بالوزن'},
-                  {value:'other',label:'منتجات أخري'}
-                ]
-              });
-              questionsEl.appendChild(qKindCC);
+              // دالة مساعده: سؤال "المنتج متواجد مع العميل؟"
+              function askWithCustomer(nameWhen, onYes, onNo){
+                const qWith = radioQuestion({
+                  title:'المنتج متواجد مع العميل؟',
+                  name: nameWhen,
+                  options:[ {value:'yes',label:'نعم'}, {value:'no',label:'لا'} ]
+                });
+                questionsEl.appendChild(qWith);
+                qWith.querySelectorAll(`input[name="${nameWhen}"]`).forEach(w=>{
+                  w.onchange=()=>{
+                    pruneNextSiblings(qWith,'q-block'); resetRequired();
+                    (w.value==='yes'?onYes:onNo)();
+                  };
+                });
+              }
 
-              qKindCC.querySelectorAll('input[name="wtKindCC"]').forEach(k=>{
-                k.onchange=()=>{
-                  pruneNextSiblings(qKindCC,'q-block'); resetRequired();
-                  wipe(state.wt,['rr','invoiced','abd']);
-                  state.wt.kind = (k.value==='fish')?'سمك':(k.value==='meat'?'لحوم – جبن بالوزن':'منتجات أخرى'); renderMiniSummary();
+              // دالة مساعده: سؤال "استرجاع أم استبدال"
+              function askRefundReplace(nameRR, onRefund, onReplace){
+                const qRR = radioQuestion({
+                  title:'هل تريد استرجاع أم استبدال المنتج؟',
+                  name: nameRR,
+                  options:[ {value:'refund',label:'استرجاع فقط'}, {value:'replace',label:'استبدال'} ]
+                });
+                questionsEl.appendChild(qRR);
+                qRR.querySelectorAll(`input[name="${nameRR}"]`).forEach(rr=>{
+                  rr.onchange=()=>{
+                    pruneNextSiblings(qRR,'q-block'); resetRequired();
+                    (rr.value==='refund'?onRefund:onReplace)();
+                  };
+                });
+              }
 
-                  if(k.value==='fish'){ addResult('Complaint Wrong Transaction – chef –  عدم الالتزام بكومنت'); return; }
-
-                  if(k.value==='meat'){
-                    const qRRMeat = radioQuestion({
-                      title:'هل تريد استرجاع ام استبدال المنتج؟',
-                      name:'wtCRRMeat',
-                      options:[ {value:'return',label:'أسترجاع فقط'}, {value:'replace',label:'أستبدال'} ]
-                    });
-                    questionsEl.appendChild(qRRMeat);
-
-                    qRRMeat.querySelectorAll('input[name="wtCRRMeat"]').forEach(rr=>{
-                      rr.onchange=()=>{
-                        pruneNextSiblings(qRRMeat,'q-block'); resetRequired();
-                        state.wt.rr = rr.value==='return'?'أسترجاع فقط':'أستبدال'; renderMiniSummary();
-
-                        if(rr.value==='return'){
-                          addResult('Complaint Wrong Transaction – Chef – عدم الالتزام بكومنت');
-                        }else{
-                          addResult('عمل طلب جديد بالمنتج.');
-                          addResult('ترحيل موعد التوصيل فترة واحدة.');
-                          addResult('إضافة تعليق "خاص بشكوى".');
-                          addResult('Complaint Wrong Transaction – Chef –عدم الالتزام بكومنت');
-                          addResult('يتم إضافة PDF بالشكوى.');
-                        }
-                      };
-                    });
-                    return;
+              // مسارات الدفع
+              if(p.value==='online'){
+                // Online Payment → نوع المنتج
+                askKind('wtCKindOnline', {
+                  fish: ()=>{
+                    // سمك → سؤال تواجد المنتج (لكن النتيجة ثابتة Chef في الحالتين)
+                    askWithCustomer('wtCFishWithCustOnline',
+                      ()=>{ addResult('Complaint Wrong Transaction – chef –  عدم الالتزام بكومنت'); },
+                      ()=>{ addResult('Complaint Wrong Transaction – chef –  عدم الالتزام بكومنت'); }
+                    );
+                  },
+                  meat: ()=>{
+                    // لحوم/دواجن/جبن بالوزن → استرجاع أو استبدال (Chef)
+                    askRefundReplace('wtCMeatRROnline',
+                      ()=>{ addResult('Complaint Wrong Transaction – Chef – عدم الالتزام بكومنت'); },
+                      ()=>{ replacementSteps('Complaint Wrong Transaction – Chef '); }
+                    );
+                  },
+                  other: ()=>{
+                    // منتجات أخرى → استرجاع أو استبدال (Picker)
+                    askRefundReplace('wtCOtherRROnline',
+                      ()=>{ addResult('Complaint Wrong Transaction – Picker– عدم الالتزام بكومنت'); },
+                      ()=>{ replacementSteps('Complaint Wrong Transaction – Picker '); }
+                    );
                   }
-
-                  const qRROther = radioQuestion({
-                    title:'هل تريد استرجاع ام استبدال المنتج؟',
-                    name:'wtCRROther',
-                    options:[ {value:'return',label:'أسترجاع فقط'}, {value:'replace',label:'أستبدال'} ]
-                  });
-                  questionsEl.appendChild(qRROther);
-
-                  qRROther.querySelectorAll('input[name="wtCRROther"]').forEach(rr=>{
-                    rr.onchange=()=>{
-                      pruneNextSiblings(qRROther,'q-block'); resetRequired();
-                      state.wt.rr = rr.value==='return'?'أسترجاع فقط':'أستبدال'; renderMiniSummary();
-
-                      if(rr.value==='return'){
-                        addResult('Complaint Wrong Transaction – Picker –عدم الالتزام بكومنت');
-                      }else{
-                        addResult('عمل طلب جديد بباقي الكمية.');
-                        addResult('ترحيل موعد التوصيل فترة واحدة.');
-                        addResult('إضافة تعليق "خاص بشكوى".');
-                        addResult('Complaint Wrong Transaction – Picker –عدم الالتزام بكومنت');
-                        addResult('يتم إضافة PDF بالشكوى.');
-                      }
-                    };
-                  });
-                };
-              });
+                });
+              }else{
+                // كاش/فيزا → التطبيق أم OTA؟
+                const qCh = radioQuestion({
+                  title:'هل الطلب من خلال التطبيق أم OTA؟',
+                  name:'wtCChannel',
+                  options:[ {value:'app',label:'التطبيق'}, {value:'ota',label:'OTA'} ]
+                });
+                questionsEl.appendChild(qCh);
+                qCh.querySelectorAll('input[name="wtCChannel"]').forEach(ch=>{
+                  ch.onchange=()=>{
+                    pruneNextSiblings(qCh,'q-block'); resetRequired();
+                    if(ch.value==='app'){
+                      // من خلال التطبيق → نفس منطق الـ Online
+                      askKind('wtCKindCashApp', {
+                        fish: ()=>{
+                          askWithCustomer('wtCFishWithCustCashApp',
+                            ()=>{ addResult('Complaint Wrong Transaction – chef –  عدم الالتزام بكومنت'); },
+                            ()=>{ addResult('Complaint Wrong Transaction – chef –  عدم الالتزام بكومنت'); }
+                          );
+                        },
+                        meat: ()=>{
+                          askRefundReplace('wtCMeatRRCashApp',
+                            ()=>{ addResult('Complaint Wrong Transaction – Chef – عدم الالتزام بكومنت'); },
+                            ()=>{ replacementSteps('Complaint Wrong Transaction – Chef '); }
+                          );
+                        },
+                        other: ()=>{
+                          askRefundReplace('wtCOtherRRCashApp',
+                            ()=>{ addResult('Complaint Wrong Transaction – Picker– عدم الالتزام بكومنت'); },
+                            ()=>{ replacementSteps('Complaint Wrong Transaction – Picker '); }
+                          );
+                        }
+                      });
+                    }else{
+                      // OTA → هل الكومنت متواجد على المنتج على OTA؟
+                      const qOTA = radioQuestion({
+                        title:'هل الكومنت متواجد علي المنتج علي OTA؟',
+                        name:'wtCOTACmt',
+                        options:[ {value:'yes',label:'نعم'},{value:'no',label:'لا'} ]
+                      });
+                      questionsEl.appendChild(qOTA);
+                      qOTA.querySelectorAll('input[name="wtCOTACmt"]').forEach(o=>{
+                        o.onchange=()=>{
+                          pruneNextSiblings(qOTA,'q-block'); resetRequired();
+                          if(o.value==='no'){
+                            // لا يوجد كومنت على OTA → CC
+                            askKind('wtCKindCashOTA_no', {
+                              fish: ()=>{
+                                askWithCustomer('wtCFishWithCustCashOTANo',
+                                  ()=>{ addResult('Complaint Wrong Transaction – CC–  عدم الالتزام بكومنت'); },
+                                  ()=>{ addResult('Complaint Wrong Transaction – CC–  عدم الالتزام بكومنت'); }
+                                );
+                              },
+                              meat: ()=>{
+                                askRefundReplace('wtCMeatRRCashOTANo',
+                                  ()=>{ addResult('Complaint Wrong Transaction – CC– عدم الالتزام بكومنت'); },
+                                  ()=>{ replacementSteps('Complaint Wrong Transaction – CC–'); }
+                                );
+                              },
+                              other: ()=>{
+                                // منتجات أخرى → أولاً سؤال المحاسبة على الكمية كاملة
+                                const qInv = radioQuestion({
+                                  title:'هل تم المحاسبة في الفاتورة على الكمية كاملة؟',
+                                  name:'wtCOTAOthersInvNo',
+                                  options:[ {value:'yes',label:'نعم'}, {value:'no',label:'لا'} ]
+                                });
+                                questionsEl.appendChild(qInv);
+                                qInv.querySelectorAll('input[name="wtCOTAOthersInvNo"]').forEach(inv=>{
+                                  inv.onchange=()=>{
+                                    pruneNextSiblings(qInv,'q-block'); resetRequired();
+                                    askRefundReplace('wtCOtherRRCashOTANo',
+                                      ()=>{ addResult('Complaint Wrong Transaction – CC– عدم الالتزام بكومنت'); },
+                                      ()=>{
+                                        addResult('عمل طلب جديد بباقي الكمية.');
+                                        addResult('ترحيل موعد التوصيل فترة واحدة.');
+                                        addResult("إضافة تعليق 'خاص بشكوى'.");
+                                        addResult('عمل تيكت شكوي بالتصنيف ويتم أضافة PDF بالشكوي Complaint Wrong Transaction – CC–عدم الالتزام بكومنت');
+                                      }
+                                    );
+                                  };
+                                });
+                              }
+                            });
+                          }else{
+                            // يوجد كومنت على OTA → نفس منطق التطبيق لكن التصنيفات Chef/Picker وليست CC
+                            askKind('wtCKindCashOTA_yes', {
+                              fish: ()=>{
+                                askWithCustomer('wtCFishWithCustCashOTAYes',
+                                  ()=>{ addResult('Complaint Wrong Transaction – chef –  عدم الالتزام بكومنت'); },
+                                  ()=>{ addResult('Complaint Wrong Transaction – chef –  عدم الالتزام بكومنت'); }
+                                );
+                              },
+                              meat: ()=>{
+                                askRefundReplace('wtCMeatRRCashOTAYes',
+                                  ()=>{ addResult('Complaint Wrong Transaction – Chef – عدم الالتزام بكومنت'); },
+                                  ()=>{ replacementSteps('Complaint Wrong Transaction – Chef '); }
+                                );
+                              },
+                              other: ()=>{
+                                const qInv2 = radioQuestion({
+                                  title:'هل تم المحاسبة في الفاتورة على الكمية كاملة؟',
+                                  name:'wtCOTAOthersInvYes',
+                                  options:[ {value:'yes',label:'نعم'}, {value:'no',label:'لا'} ]
+                                });
+                                questionsEl.appendChild(qInv2);
+                                qInv2.querySelectorAll('input[name="wtCOTAOthersInvYes"]').forEach(inv2=>{
+                                  inv2.onchange=()=>{
+                                    pruneNextSiblings(qInv2,'q-block'); resetRequired();
+                                    askRefundReplace('wtCOtherRRCashOTAYes',
+                                      ()=>{ addResult('Complaint Wrong Transaction – Picker –عدم الالتزام بكومنت'); },
+                                      ()=>{
+                                        addResult('عمل طلب جديد بباقي الكمية.');
+                                        addResult('ترحيل موعد التوصيل فترة واحدة.');
+                                        addResult("إضافة تعليق 'خاص بشكوى'.");
+                                        addResult('عمل تيكت شكوي بالتصنيف ويتم أضافة PDF بالشكوي Complaint Wrong Transaction – Picker –عدم الالتزام بكومنت');
+                                      }
+                                    );
+                                  };
+                                });
+                              }
+                            });
+                          }
+                        };
+                      });
+                    }
+                  };
+                });
+              }
             };
           });
-        };
-      });
-    };
-  });
 
-  renderMiniSummary();
-}
 
-/* =========================
+          /* =========================
    إنهاء الشكوى + Reset
    ========================= */
 function clearComplaintInputs(){
@@ -1023,6 +1137,12 @@ function resetAll(){
   renderMiniSummary();
 }
 
+
+            }; // end p.onchange
+          }); // end qPay forEach
+        }; // end qClient2 onchange
+      }); // end qClient2 forEach
+} // end buildWT
 /* =========================
    التحكم العام في اختيار نوع الشكوى
    ========================= */
