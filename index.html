@@ -5,6 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Agent Troubleshooting – Seoudi Dashboard</title>
   <link rel="stylesheet" href="styles.css" />
+
+  <style>
+    .invalid{border-color:#ef4444 !important; box-shadow:0 0 0 3px rgba(239,68,68,.12) !important;}
+  </style>
 </head>
 <body class="rtl">
   <!-- Sidebar Drafts (fixed, collapsible) -->
@@ -57,7 +61,7 @@
       </article>
     </section>
 
-    <!-- يمين: نوع الشكوى + الأسئلة + المطلوب + (الملاحظات فقط تحت) -->
+    <!-- يمين: نوع الشكوى + الأسئلة + المطلوب + (الملاحظات + اسم المنتج من OTA) -->
     <section class="col-right">
       <article class="card p-card">
         <h3 class="card-title" data-ico="📋">نوع الشكوى</h3>
@@ -65,7 +69,6 @@
           <label class="seg"><input type="radio" name="ctype" value="pq" /><span>جودة منتج</span></label>
           <label class="seg"><input type="radio" name="ctype" value="missing" /><span>عناصر مفقودة</span></label>
           <label class="seg"><input type="radio" name="ctype" value="wt" /><span>خطأ فردي</span></label>
-          <!-- تم حذف خيار تأخير توصيل -->
         </div>
         <p class="hint mt8">اختر نوع الشكوى لبدء الخطوات.</p>
       </article>
@@ -81,10 +84,14 @@
         <div id="summary"></div>
       </article>
 
-      <!-- الملاحظات فقط -->
+      <!-- بيانات عامة -->
       <article class="card p-card mt16">
-        <h3 class="card-title" data-ico="📑">الملاحظات </h3>
+        <h3 class="card-title" data-ico="🧾">بيانات عامة</h3>
         <div class="form-grid">
+          <div class="form-field">
+            <div class="label">اسم المنتج من على OTA <span class="req">*</span></div>
+            <input id="otaProductName" type="text" placeholder="اكتب اسم المنتج الموجود على OTA" /></div>
+
           <div class="form-field" style="grid-column:1/-1;">
             <div class="label">الملاحظات </div>
             <textarea id="otherNotes" class="note-field" rows="3"
