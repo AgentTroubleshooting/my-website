@@ -54,17 +54,67 @@ function show(el, on) { if(!el) return; el.style.display = on ? '' : 'none'; }
 function clear(el) { if(!el) return; el.innerHTML = ''; }
 function esc(s=''){ return s.replace(/[&<>"']/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m])); }
 
-/* ========== تنسيق خاص لسطر الاعتذار ========== */
+/* ========== تنسيق خاص لسطر الاعتذار + ملاحظة المنتجات المبردة/المجمدة ========== */
 (function injectApologyStyle(){
   try{
     const st = document.createElement('style');
     st.textContent = `
       .result-apology .apology-main{ font-weight:700; color:#0d47a1; }
+      .note-cold { 
+        background-color:#eaf3ff;
+        color:#0d47a1;
+        border:2px solid #0d47a1;
+        border-radius:10px;
+        padding:12px 14px;
+        margin-top:12px;
+        line-height:1.7;
+      }
+      .note-cold b { color:#0b3c91; }
     `;
     document.head.appendChild(st);
   }catch{}
 })();
 
+/* ========= ملحوظة المنتجات المبردة/المجمدة — تُعرض أسفل عنوان "المطلوب" فقط عند جودة منتج ========= */
+
+
+function ensureColdNote(){
+  try{
+    if(!requiredEl) return;
+
+    // هل يوجد أي عنصر "مطلوب" يخص الشيف؟
+    const hasChef = [...(requiredEl.querySelectorAll('.result')||[])]
+      .some(el => /Chef|chef/.test((el.textContent||'').trim()));
+
+    // نظهر الملحوظة في حالتين:
+    // 1) شكوى جودة منتج (PQ)
+    // 2) خطأ فردي (WT) وكان هناك بند متعلق بالشيف
+    const shouldShow = (state.type === 'pq') || (state.type === 'wt' && hasChef);
+
+    const existing = requiredEl.querySelector('.note-cold');
+    if (!shouldShow){
+      if(existing) existing.remove(); // لو مش مطلوبة، نشيلها
+      return;
+    }
+
+    if (existing){
+      // انقلها لأسفل القسم لتكون آخر عنصر في "المطلوب"
+      requiredEl.appendChild(existing);
+      return;
+    }
+
+    const note = document.createElement('div');
+    note.className = 'note-cold';
+    note.innerHTML = `
+    <b>ملحوظة هامة:</b><br>
+    في حالة <b>المنتجات المبردة أو المجمدة</b>، يتم إبلاغ العميل بضرورة الاحتفاظ بالمنتج على حالته.<br>
+    <b>لو المنتج مبرد</b>، يتم حفظه في <b>الثلاجة</b>، ولو المنتج <b>مجمد</b> يُحفظ في <b>الفريزر</b>.<br>
+    في حالة أن المنتج <b>مبرد وتم الاحتفاظ به مجمد</b> أو <b>العكس</b> يتم عمل <b>شكوى فقط</b> ولا يتم عمل طلب جديد للعميل.
+    `;
+    // ضعها أسفل قسم "المطلوب" كآخر عنصر
+    requiredEl.appendChild(note);
+  }catch{}
+}
 /* دالة فحص: نضيف رسالة الاعتذار فقط عندما يكون المطلوب "عمل طلب جديد" فعليًا (وليس "عرض") */
 function shouldInjectApology(line=''){
   const t = (line||'').trim();
@@ -97,7 +147,8 @@ function addResult(text, opts={}){
     يتم توضيح ده في الـ Ticket بشكل واضح علشان يتم المتابعة من الفريق المختص.`;
     requiredEl.appendChild(ap);
   }
-
+  // تأكيد إظهار ملحوظة المنتجات المبردة/المجمدة إن كانت الشكوى جودة منتج
+  ensureColdNote();
   renderMiniSummary();
 }
 
@@ -166,7 +217,7 @@ function buildCopyText(){
     if(state.wt.rr)       steps.push(`اختيار العميل: ${state.wt.rr}`);
   }
 
-  const reqs = [...(requiredEl?.querySelectorAll('.result')||[])].map(el=>el.textContent.trim()).filter(Boolean);
+  const reqs = [...(requiredEl?.querySelectorAll('.result')||[])].filter(el=>!el.classList.contains('result-apology')).map(el=>el.textContent.trim()).filter(Boolean);
 
   const lines = [];
   lines.push('الخلاصة');
@@ -259,7 +310,7 @@ function renderMiniSummary(){
     steps.forEach(s=> html += `<li>${esc(s)}</li>`); html += '</ul></div>';
   }
 
-  const reqs = [...(requiredEl?.querySelectorAll('.result')||[])].map(el=>el.textContent.trim()).filter(Boolean);
+  const reqs = [...(requiredEl?.querySelectorAll('.result')||[])].filter(el=>!el.classList.contains('result-apology')).map(el=>el.textContent.trim()).filter(Boolean);
   if(reqs.length){
     html += '<div class="mini-section is-req"><strong>المطلوب:</strong><ul>';
     reqs.forEach(r=> html += `<li>${esc(r)}</li>`); html += '</ul></div>';
@@ -299,7 +350,7 @@ function replacementOrderLine(){ return 'عمل طلب جديد بنفس الك�
 function buildPQ(){
   state.type = 'pq';
   resetStatePart('pq');
-  clear(questionsEl); resetRequired(); show(qaCard,true);
+  clear(questionsEl); resetRequired(); show(qaCard,true); ensureColdNote();
 
   const wrap = document.createElement('div');
   wrap.className='case-grid';
@@ -319,6 +370,7 @@ function selectPQCase(c, node){
   node.classList.add('active');
   const old = document.querySelector('.q-after-grid'); if(old) old.remove();
   resetRequired();
+  ensureColdNote();
   wipe(state.pq, ['client','pay','product','withClient','rr']);
   state.pq.caseId    = c.id;
   state.pq.caseLabel = c.label;
@@ -442,7 +494,7 @@ ${pqTicket(caseObj)}`);
 function buildMissing(){
   state.type='missing';
   resetStatePart('mi');
-  clear(questionsEl); resetRequired(); show(qaCard,true);
+  clear(questionsEl); resetRequired(); show(qaCard,true); ensureColdNote();
 
   const q1 = radioQuestion({
     title:'نوع العميل :',
@@ -625,7 +677,7 @@ function buildMissing(){
 function buildWT(){
   state.type='wt';
   resetStatePart('wt');
-  clear(questionsEl); resetRequired(); show(qaCard,true);
+  clear(questionsEl); resetRequired(); show(qaCard,true); ensureColdNote();
 
   const step = radioQuestion({
     title:'اختر الحالة:',
