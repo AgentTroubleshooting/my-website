@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-95XB1RSQFD"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-95XB1RSQFD');
+  </script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Agent Troubleshooting – Seoudi Dashboard</title>
+  <link rel="stylesheet" href="styles.css" />
+
+  <style>
+    .invalid{border-color:#ef4444 !important; box-shadow:0 0 0 3px rgba(239,68,68,.12) !important;}
+  </style>
+</head>
+<body class="rtl">
+  <!-- Sidebar Drafts (fixed, collapsible) -->
+  <aside id="draftsSidebar" class="drafts collapsed" aria-label="Drafts">
+    <div class="drafts-header">
+      <button id="draftsToggle" class="toggle" title="Show/Hide">❯</button>
+      <span class="title">Drafts</span>
+      <input id="draftsSearch" class="search" type="search" placeholder="ابحث برقم العميل" />
+    </div>
+    <ul id="draftsList" class="drafts-list"></ul>
+  </aside>
+
+  <!-- Header (Sticky) -->
+  <header class="header sticky">
+    <div class="header-left">
+      <div class="prepared-left">Prepared By: <strong>Passant Sayed</strong></div>
+    </div>
+
+    <div class="header-center">
+      <div class="prepared store">Agent Troubleshooting</div>
+      <div class="prepared product">Seoudi Supermarket</div>
+    </div>
+
+    <!-- Theme swatches -->
+    <div class="header-tools">
+      <div class="theme-switcher" aria-label="Change theme">
+        <button class="swatch green"    data-swatch="green"    title="Green"></button>
+        <button class="swatch mid"      data-swatch="mid"      title="Mid Green"></button>
+        <button class="swatch mint"     data-swatch="blue"     title="Mint"></button>
+        <button class="swatch violet"   data-swatch="violet"   title="Violet"></button>
+        <button class="swatch peach"    data-swatch="peach"    title="Peach"></button>
+        <button class="swatch lavender" data-swatch="lavender" title="Lavender"></button>
+        <button class="swatch sand"     data-swatch="sand"     title="Sand"></button>
+        <button class="swatch orange"   data-swatch="orange"   title="Orange"></button>
+      </div>
+    </div>
+  </header>
+
+  <main class="grid">
+    <!-- يسار: الخلاصة فقط -->
+    <section class="col-left">
+      <article id="miniSummaryCard" class="card p-card mini-sticky">
+        <h3 class="card-title" data-ico="🗂️">الخلاصة</h3>
+        <div id="miniSummary"></div>
+        <div class="row mt12" style="justify-content:flex-end; gap:10px;">
+          <button id="copyMiniBtn" class="seg">نسخ الخلاصة</button>
+          <button id="saveDraftBtn" class="seg seg-draft">حفظ Draft</button>
+          <button id="endBtn" class="seg">إنهاء الشكوى</button>
+        </div>
+      </article>
+    </section>
+
+    <!-- يمين: نوع الشكوى + الأسئلة + المطلوب + (الملاحظات + اسم المنتج من OTA) -->
+    <section class="col-right">
+      <article class="card p-card">
+        <h3 class="card-title" data-ico="📋">نوع الشكوى</h3>
+        <div class="segmented" id="ctypeTabs">
+          <label class="seg"><input type="radio" name="ctype" value="pq" /><span>جودة منتج</span></label>
+          <label class="seg"><input type="radio" name="ctype" value="missing" /><span>عناصر مفقودة</span></label>
+          <label class="seg"><input type="radio" name="ctype" value="wt" /><span>خطأ فردي</span></label>
+        </div>
+        <p class="hint mt8">اختر نوع الشكوى لبدء الخطوات.</p>
+      </article>
+
+      <article id="qaCard" class="card p-card" style="display:none">
+        <h3 class="card-title" data-ico="🧩">الأسئلة</h3>
+        <div class="accent-line"></div>
+        <div id="questions"></div>
+      </article>
+
+      <article id="summaryCard" class="card p-card mt16" style="display:block">
+        <h3 class="card-title" data-ico="✅">المطلوب <span class="badge badge-req">هام</span></h3>
+        <div id="summary"></div>
+      </article>
+
+      <!--  -->
+      <article class="card p-card mt16">
+        <h3 class="card-title" data-ico="🧾"></h3>
+        <div class="form-grid">
+          <div class="form-field">
+            <div class="label">اسم المنتج من على OTA <span class="req">*</span></div>
+            <input id="otaProductName" type="text" placeholder="اكتب اسم المنتج كما هو ظاهر على OTA" /></div>
+
+          <div class="form-field" style="grid-column:1/-1;">
+            <div class="label">الملاحظات </div>
+            <textarea id="otherNotes" class="note-field" rows="3"
+              placeholder="برجاء كتابة أي تفاصيل متعلقة بالعميل مثل: التواصل قبل الساعة 11"></textarea>
+          </div>
+        </div>
+      </article>
+    </section>
+  </main>
+
+  <footer class="footer-prepared">Prepared By: Passant Sayed</footer>
+  <script src="app.js" defer></script>
+</body>
+</html>
