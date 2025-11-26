@@ -578,7 +578,10 @@ function buildMissing(){
                   state.mi.pay = pp.value==='prepaid'?'دفع مسبق "Online Payment"':'كاش - فيزا'; renderMiniSummary();
 
                   if(pp.value==='prepaid'){
-                    addResult('شكوى Delivery – Complaint - Missing Item فقط.');
+                     addResult('طلب جديد بالمفقود.');
+		          addResult('ترحيل فترة واحدة.');
+  		          addResult('تعليق \'خاص بشكوى\'.');
+                                          addResult('تيكت: Complaint Missing Item - Delivery + PDF.');
                   }else{
                     const qFish = radioQuestion({
                       title:'هل المنتج سمك؟',
