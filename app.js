@@ -498,7 +498,7 @@ function withClientReturnReplacePQ(caseObj, mount){
       if(w.value==='no'){ addResult(pqTicket(caseObj)); return; }
 
       const qRR = radioQuestion({
-        title:'هل العميل يؤيد أسترجاع ام استبدال؟',
+        title:'هل العميل يريد أسترجاع ام استبدال؟',
         name:'pqRR',
         options:[ {value:'return',label:'أسترجاع'}, {value:'replace',label:'أستبدال'} ]
       });
