@@ -371,6 +371,8 @@ const PQ_CASES = [
   {id:'broken',     label:'مكسور/مدهوس/مفتوح', mode:'flow', sub:'مكسور/ مدهوس / مفتوح'},
   {id:'salty',      label:'ملح زائد',    mode:'flow',    sub:'ملح زائد',                  fishGate:true},
   {id:'expired',    label:'منتهي الصلاحية', mode:'flow',  sub:'منتهي الصلاحية'},
+  /* --- NEW: Wrong Bagging --- */
+  {id:'wrongBagging', label:'تكييس خطأ',  mode:'flow',    sub:'تكييس خطأ'}
 ];
 function pqTicket(c){
   if(c.mode==='hotfood') return 'Complaint–HotFood - Product Quality';
@@ -934,7 +936,7 @@ function buildWT(){
                               }else{
                                 addResult('عمل طلب جديد بباقي الكمية.');
                                 addResult('ترحيل موعد التوصيل فترة واحدة.');
-                                addResult('إضافة تعليق "خاص بشكوى".');
+                                addResult("إضافة تعليق 'خاص بشكوى'.");
                                 addResult('Complaint Wrong Transaction – Picker –Less Quantity');
                                 addResult('يتم إضافة PDF بالشكوى.');
                               }
