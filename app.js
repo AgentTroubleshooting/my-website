@@ -172,7 +172,7 @@ function addResult(text, opts={}){
   if(opts.html) d.innerHTML = text; else d.textContent = text;
   requiredEl.appendChild(d);
 
-  if(shouldInjectApology(text)){
+   if (shouldInjectApology(text)) {
     const ap = document.createElement('div');
     ap.className = 'result result-apology';
     ap.innerHTML = `نقول للعميل (<span class="apology-main"><strong>بعتذر لحضرتك جداً عن أي مشكلة واجهتك، هيتم مراجعة الشكوى داخلياً من غير ما نزعج حضرتك</strong></span>)<br>
@@ -180,7 +180,8 @@ function addResult(text, opts={}){
     يتم توضيح ده في الـ Ticket بشكل واضح علشان يتم المتابعة من الفريق المختص.`;
     requiredEl.appendChild(ap);
   }
-  ensureColdNote();      // تُدير حالة WT + Chef فقط الآن
+
+  // ملحوظة المبرد/المجمد مش هتظهر تحت تاني في WT
   renderMiniSummary();
 }
 
@@ -721,8 +722,8 @@ function buildWT(){
   resetStatePart('wt');
   clear(questionsEl); resetRequired(); show(qaCard,true);
 
-  /* اخفاء الملحوظة العلوية لأن النوع ليس PQ */
-  renderColdNoteTopForPQ(false);
+  /* إظهار نفس ملحوظة المبرد/المجمد أعلى الأسئلة مثل جودة منتج */
+    renderColdNoteTopForPQ(true);
 
   const step = radioQuestion({
     title:'اختر الحالة:',
