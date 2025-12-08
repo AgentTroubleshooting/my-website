@@ -498,7 +498,7 @@ function withClientReturnReplacePQ(caseObj, mount){
       if(w.value==='no'){ addResult(pqTicket(caseObj)); return; }
 
       const qRR = radioQuestion({
-        title:'هل العميل يريد أسترجاع ام استبدال؟',
+        title:'هل العميل يؤيد أسترجاع ام استبدال؟',
         name:'pqRR',
         options:[ {value:'return',label:'أسترجاع'}, {value:'replace',label:'أستبدال'} ]
       });
@@ -528,190 +528,378 @@ ${pqTicket(caseObj)}`);
 /* =========================
    عناصر مفقودة (Missing Items)
    ========================= */
-function buildMissing(){
-  state.type='missing';
-  resetStatePart('mi');
-  clear(questionsEl); resetRequired(); show(qaCard,true);
+function buildMissing() {
+  state.type = "missing";
+  resetStatePart("mi");
+  clear(questionsEl);
+  resetRequired();
+  show(qaCard, true);
 
   /* اخفاء الملحوظة العلوية لأن نوع الشكوى ليس PQ */
   renderColdNoteTopForPQ(false);
 
   const q1 = radioQuestion({
-    title:'نوع العميل :',
-    name:'miClient',
-    options:[ {value:'branch',label:'عميل فرع'}, {value:'delivery',label:'عميل ديليفري'} ]
+    title: "نوع العميل :",
+    name: "miClient",
+    options: [
+      { value: "branch", label: "عميل فرع" },
+      { value: "delivery", label: "عميل ديليفري" },
+    ],
   });
   questionsEl.appendChild(q1);
 
-  q1.querySelectorAll('input[name="miClient"]').forEach(r=>{
-    r.onchange=()=>{
-      pruneNextSiblings(q1,'q-block'); resetRequired();
-      wipe(state.mi,['pay','fish','inv','abd','source']);
-      state.mi.client = r.value==='branch'?'عميل فرع':'عميل ديليفري'; renderMiniSummary();
+  q1.querySelectorAll('input[name="miClient"]').forEach((r) => {
+    r.onchange = () => {
+      pruneNextSiblings(q1, "q-block");
+      resetRequired();
+      wipe(state.mi, ["pay", "fish", "inv", "abd", "source"]);
+      state.mi.client = r.value === "branch" ? "عميل فرع" : "عميل ديليفري";
+      renderMiniSummary();
 
-      if(r.value==='branch'){ addResult('يتم عمل شكوى Complaint - Missing Item - Retail فقط.'); }
-      else{
-        const qInv = radioQuestion({
-          title:'هل المنتج متحاسب عليه في الفاتورة؟',
-          name:'miInv0',
-          options:[ {value:'yes',label:'نعم'}, {value:'no',label:'لا'} ]
-        });
-        questionsEl.appendChild(qInv);
-
-        qInv.querySelectorAll('input[name="miInv0"]').forEach(inv0=>{
-          inv0.onchange=()=>{
-            pruneNextSiblings(qInv,'q-block'); resetRequired();
-            wipe(state.mi,['pay','fish','abd','source']);
-            state.mi.inv = inv0.value==='yes'?'نعم':'لا'; renderMiniSummary();
-
-            if(inv0.value==='yes'){
-              const qPay = radioQuestion({
-                title:'هل طريقة الدفع',
-                name:'miPay0',
-                options:[ {value:'prepaid',label:'دفع مسبق "Online Payment"'}, {value:'cash',label:'كاش - فيزا'} ]
-              });
-              questionsEl.appendChild(qPay);
-
-              qPay.querySelectorAll('input[name="miPay0"]').forEach(pp=>{
-                pp.onchange=()=>{
-                  pruneNextSiblings(qPay,'q-block'); resetRequired();
-                  wipe(state.mi,['fish','abd','source']);
-                  state.mi.pay = pp.value==='prepaid'?'دفع مسبق "Online Payment"':'كاش - فيزا'; renderMiniSummary();
-
-                  if(pp.value==='prepaid'){
-                     addResult('طلب جديد بالمفقود.');
-		          addResult('ترحيل فترة واحدة.');
-  		          addResult('تعليق \'خاص بشكوى\'.');
-                                          addResult('تيكت: Complaint Missing Item - Delivery + PDF.');
-                  }else{
-                    const qFish = radioQuestion({
-                      title:'هل المنتج سمك؟',
-                      name:'miFish',
-                      options:[ {value:'yes',label:'نعم'}, {value:'no',label:'لا'} ]
-                    });
-                    questionsEl.appendChild(qFish);
-
-                    qFish.querySelectorAll('input[name="miFish"]').forEach(ff=>{
-                      ff.onchange=()=>{
-                        pruneNextSiblings(qFish,'q-block'); resetRequired();
-                        state.mi.fish = ff.value==='yes'?'سمك':'ليس سمك'; renderMiniSummary();
-
-                        if(ff.value==='yes'){
-                          addResult('شكوى Delivery – Complaint - Missing Item فقط.');
-                        }else{
-                          addResult('طلب جديد بالمفقود.');
-                          addResult('ترحيل فترة واحدة.');
-                          addResult('تعليق \'خاص بشكوى\'.');
-                          addResult('تيكت: Complaint Missing Item - Delivery + PDF.');
-                        }
-                      };
-                    });
-                  }
-                };
-              });
-            }else{
-              const qPay2 = radioQuestion({
-                title:'هل طريقة الدفع',
-                name:'miPay1',
-                options:[ {value:'prepaid',label:'دفع مسبق "Online Payment"'}, {value:'cash',label:'كاش - فيزا'} ]
-              });
-              questionsEl.appendChild(qPay2);
-
-              qPay2.querySelectorAll('input[name="miPay1"]').forEach(pp2=>{
-                pp2.onchange=()=>{
-                  pruneNextSiblings(qPay2,'q-block'); resetRequired();
-                  wipe(state.mi,['fish','abd','source']);
-                  state.mi.pay = pp2.value==='prepaid'?'دفع مسبق "Online Payment"':'كاش - فيزا'; renderMiniSummary();
-
-                  if(pp2.value==='prepaid'){
-                    const qABD1 = radioQuestion({
-                      title:'مراجعة الماجينتو وتيكت الأدمن داش بورد:',
-                      name:'miABD1',
-                      options:[
-                        {value:'deleted',    label:'تم الحذف من خلال قسم الأدمن داش بورد'},
-                        {value:'notordered', label:'لم يكن المنتج مطلوب في الطلب الأصلي'},
-                      ]
-                    });
-                    questionsEl.appendChild(qABD1);
-                    qABD1.querySelectorAll('input[name="miABD1"]').forEach(ab=>{
-                      ab.onchange=()=>{
-                        pruneNextSiblings(qABD1,'q-block'); resetRequired();
-                        state.mi.abd = ab.value==='deleted'?'تم الحذف من الأدمن':'لم يكن مطلوبًا'; renderMiniSummary();
-
-                        if(ab.value==='deleted'){
-                          addResult('يتم عرض طلب جديد ببديل مناسب (New Order).');
-                          addResult('وإذا رُفِض أو لا يوجد بديل: Follow Up Order.');
-                        }else{
-                          addResult('يتم التوضيح للعميل أن المنتج غير مطلوب بالطلب من الأساس (من التطبيق).');
-                          addResult('يتم عرض طلب جديد بالمنتج الذي يريده (New Order).');
-                          addResult('وإذا رُفِض أو لا يوجد بديل: Follow Up Order.');
-                        }
-                      };
-                    });
-                  }else{
-                    const qSrc = radioQuestion({
-                      title:'الطلب من:',
-                      name:'miSrc',
-                      options:[ {value:'app',label:'Application'}, {value:'ota',label:'OTA'} ]
-                    });
-                    questionsEl.appendChild(qSrc);
-
-                    qSrc.querySelectorAll('input[name="miSrc"]').forEach(ss=>{
-                      ss.onchange=()=>{
-                        pruneNextSiblings(qSrc,'q-block'); resetRequired();
-                        wipe(state.mi,['abd']);
-                        state.mi.source = ss.value==='app' ? 'Application' : 'OTA';
-                        renderMiniSummary();
-
-                        const qABD2 = radioQuestion({
-                          title:'مراجعة الماجينتو وتيكت الأدمن داش بورد:',
-                          name:'miABD2',
-                          options:[
-                            {value:'deleted',    label:'تم الحذف من خلال قسم الأدمن داش بورد'},
-                            {value:'notordered', label:'لم يكن المنتج مطلوب في الطلب الأصلي'},
-                          ]
-                        });
-                        questionsEl.appendChild(qABD2);
-
-                        qABD2.querySelectorAll('input[name="miABD2"]').forEach(ab2=>{
-                          ab2.onchange=()=>{
-                            pruneNextSiblings(qABD2,'q-block'); resetRequired();
-                            state.mi.abd = ab2.value==='deleted'?'تم الحذف من الأدمن':'لم يكن مطلوبًا'; renderMiniSummary();
-
-                            if(ss.value==='ota'){
-                              if(ab2.value==='deleted'){
-                                addResult('عرض طلب جديد ببديل مناسب (New Order). وإذا رُفِض أو لا يوجد بديل: Follow Up Order.');
-                              }else{
-                                addResult('طلب جديد بالمفقود.');
-                                addResult('ترحيل فترة واحدة.');
-                                addResult('تعليق \'خاص بشكوى\'.');
-                                addResult('تيكت: Complaint Missing Item - CC + PDF.');
-                              }
-                            }else{
-                              if(ab2.value==='deleted'){
-                                addResult('يتم عرض طلب جديد ببديل مناسب (New Order).');
-                                addResult('وإذا رُفِض أو لا يوجد بديل: Follow Up Order.');
-                              }else{
-                                addResult('يتم التوضيح للعميل أن المنتج غير مطلوب بالطلب من الأساس (من التطبيق).');
-                                addResult('يتم عرض طلب جديد بالمنتج الذي يريده (New Order).');
-                                addResult('وإذا رُفِض أو لا يوجد بديل: Follow Up Order.');
-                              }
-                            }
-                          };
-                        });
-                      };
-                    });
-                  }
-                };
-              });
-            }
-          };
-        });
+      // عميل فرع = شكوى ريتيل فقط
+      if (r.value === "branch") {
+        addResult("يتم عمل شكوى Complaint - Missing Item - Retail فقط.");
+        return;
       }
+
+      // ==== عميل ديليفري ====
+      const qInv = radioQuestion({
+        title: "هل المنتج متحاسب عليه في الفاتورة؟",
+        name: "miInv",
+        options: [
+          { value: "yes", label: "نعم" },
+          { value: "no", label: "لا" },
+        ],
+      });
+      questionsEl.appendChild(qInv);
+
+      qInv.querySelectorAll('input[name="miInv"]').forEach((inv) => {
+        inv.onchange = () => {
+          pruneNextSiblings(qInv, "q-block");
+          resetRequired();
+          wipe(state.mi, ["pay", "fish", "abd", "source"]);
+          state.mi.inv = inv.value === "yes" ? "نعم" : "لا";
+          renderMiniSummary();
+
+          if (inv.value === "yes") {
+            buildMissingInvYes();
+          } else {
+            buildMissingInvNo();
+          }
+        };
+      });
     };
   });
 
   renderMiniSummary();
+
+  // ================= Inv = نعم =================
+  function buildMissingInvYes() {
+    const qPay = radioQuestion({
+      title: "هل طريقة الدفع",
+      name: "miPayYes",
+      options: [
+        { value: "prepaid", label: 'دفع مسبق "Online Payment"' },
+        { value: "cash", label: "كاش - فيزا" },
+      ],
+    });
+    questionsEl.appendChild(qPay);
+
+    qPay.querySelectorAll('input[name="miPayYes"]').forEach((pp) => {
+      pp.onchange = () => {
+        pruneNextSiblings(qPay, "q-block");
+        resetRequired();
+        wipe(state.mi, ["fish", "abd", "source"]);
+        state.mi.pay =
+          pp.value === "prepaid"
+            ? 'دفع مسبق "Online Payment"'
+            : "كاش - فيزا";
+        renderMiniSummary();
+
+        if (pp.value === "prepaid") {
+          // أولاً نسأل: هل المنتج سمك؟ (حسب طلبك الجديد)
+          const qFishPre = radioQuestion({
+            title: "هل المنتج سمك؟",
+            name: "miFishYesPre",
+            options: [
+              { value: "yes", label: "نعم" },
+              { value: "no", label: "لا" },
+            ],
+          });
+          questionsEl.appendChild(qFishPre);
+
+          qFishPre
+            .querySelectorAll('input[name="miFishYesPre"]')
+            .forEach((ff) => {
+              ff.onchange = () => {
+                pruneNextSiblings(qFishPre, "q-block");
+                resetRequired();
+                state.mi.fish = ff.value === "yes" ? "سمك" : "ليس سمك";
+                renderMiniSummary();
+
+                if (ff.value === "yes") {
+                  // سمك + دفع مسبق + متحاسب
+                  addResult("شكوى Delivery – Complaint - Missing Item فقط.");
+                  addResult("يتم عمل (تولى مستولية - Own the Case)");
+                } else {
+                  // مش سمك → السؤال الموجود أصلاً: نفس المنتج ولا منتج آخر؟
+                  buildSameProductQuestion();
+                }
+              };
+            });
+        } else {
+          // كاش / فيزا مع Inv = نعم (المنطق القديم مع إضافة Own the Case لو سمك)
+          const qFishCash = radioQuestion({
+            title: "هل المنتج سمك؟",
+            name: "miFishYesCash",
+            options: [
+              { value: "yes", label: "نعم" },
+              { value: "no", label: "لا" },
+            ],
+          });
+          questionsEl.appendChild(qFishCash);
+
+          qFishCash
+            .querySelectorAll('input[name="miFishYesCash"]')
+            .forEach((ff) => {
+              ff.onchange = () => {
+                pruneNextSiblings(qFishCash, "q-block");
+                resetRequired();
+                state.mi.fish = ff.value === "yes" ? "سمك" : "ليس سمك";
+                renderMiniSummary();
+
+                if (ff.value === "yes") {
+                  addResult("شكوى Delivery – Complaint - Missing Item فقط.");
+                  addResult("يتم عمل (تولى مستولية - Own the Case)");
+                } else {
+                  addResult("طلب جديد بالمفقود.");
+                  addResult("ترحيل فترة واحدة.");
+                  addResult("تعليق 'خاص بشكوى'.");
+                  addResult(
+                    "تيكت: Complaint Missing Item - Delivery + PDF."
+                  );
+                }
+              };
+            });
+        }
+      };
+    });
+  }
+
+  // ================= Inv = لا =================
+  function buildMissingInvNo() {
+    // طبقًا للتعديل الثاني: أولاً نسأل هل المنتج سمك؟
+    const qFish = radioQuestion({
+      title: "هل المنتج سمك؟",
+      name: "miFishNo",
+      options: [
+        { value: "yes", label: "نعم" },
+        { value: "no", label: "لا" },
+      ],
+    });
+    questionsEl.appendChild(qFish);
+
+    qFish.querySelectorAll('input[name="miFishNo"]').forEach((ff) => {
+      ff.onchange = () => {
+        pruneNextSiblings(qFish, "q-block");
+        resetRequired();
+        state.mi.fish = ff.value === "yes" ? "سمك" : "ليس سمك";
+        renderMiniSummary();
+
+        if (ff.value === "yes") {
+          // سمك + غير متحاسب (سواء كاش أو مسبق بعد كده)
+          addResult("شكوى Delivery – Complaint - Missing Item فقط.");
+          addResult("يتم عمل (تولى مستولية - Own the Case)");
+        } else {
+          // مش سمك → نكمل الأسئلة العادية (طريقة الدفع والباقي كما كان)
+          buildInvNoRest();
+        }
+      };
+    });
+  }
+
+  // باقى منطق Inv = لا كما كان عندك (طريقة الدفع + ABD + مصدر الطلب...)
+  function buildInvNoRest() {
+    const qPay2 = radioQuestion({
+      title: "هل طريقة الدفع",
+      name: "miPayNo",
+      options: [
+        { value: "prepaid", label: 'دفع مسبق "Online Payment"' },
+        { value: "cash", label: "كاش - فيزا" },
+      ],
+    });
+    questionsEl.appendChild(qPay2);
+
+    qPay2.querySelectorAll('input[name="miPayNo"]').forEach((pp2) => {
+      pp2.onchange = () => {
+        pruneNextSiblings(qPay2, "q-block");
+        resetRequired();
+        wipe(state.mi, ["abd", "source"]);
+        state.mi.pay =
+          pp2.value === "prepaid"
+            ? 'دفع مسبق "Online Payment"'
+            : "كاش - فيزا";
+        renderMiniSummary();
+
+        if (pp2.value === "prepaid") {
+          const qABD1 = radioQuestion({
+            title: "مراجعة الماجينتو وتيكت الأدمن داش بورد:",
+            name: "miABD1",
+            options: [
+              {
+                value: "deleted",
+                label: "تم الحذف من خلال قسم الأدمن داش بورد",
+              },
+              {
+                value: "notordered",
+                label: "لم يكن المنتج مطلوب في الطلب الأصلي",
+              },
+            ],
+          });
+          questionsEl.appendChild(qABD1);
+
+          qABD1.querySelectorAll('input[name="miABD1"]').forEach((ab) => {
+            ab.onchange = () => {
+              pruneNextSiblings(qABD1, "q-block");
+              resetRequired();
+              state.mi.abd =
+                ab.value === "deleted" ? "تم الحذف من الأدمن" : "لم يكن مطلوبًا";
+              renderMiniSummary();
+
+              if (ab.value === "deleted") {
+                addResult("يتم عرض طلب جديد ببديل مناسب (New Order).");
+                addResult("وإذا رُفِض أو لا يوجد بديل: Follow Up Order.");
+              } else {
+                addResult(
+                  "يتم التوضيح للعميل أن المنتج غير مطلوب بالطلب من الأساس (من التطبيق)."
+                );
+                addResult(
+                  "يتم عرض طلب جديد بالمنتج الذي يريده (New Order)."
+                );
+                addResult("وإذا رُفِض أو لا يوجد بديل: Follow Up Order.");
+              }
+            };
+          });
+        } else {
+          const qSrc = radioQuestion({
+            title: "الطلب من:",
+            name: "miSrc",
+            options: [
+              { value: "app", label: "Application" },
+              { value: "ota", label: "OTA" },
+            ],
+          });
+          questionsEl.appendChild(qSrc);
+
+          qSrc.querySelectorAll('input[name="miSrc"]').forEach((ss) => {
+            ss.onchange = () => {
+              pruneNextSiblings(qSrc, "q-block");
+              resetRequired();
+              wipe(state.mi, ["abd"]);
+              state.mi.source = ss.value === "app" ? "Application" : "OTA";
+              renderMiniSummary();
+
+              const qABD2 = radioQuestion({
+                title: "مراجعة الماجينتو وتيكت الأدمن داش بورد:",
+                name: "miABD2",
+                options: [
+                  {
+                    value: "deleted",
+                    label: "تم الحذف من خلال قسم الأدمن داش بورد",
+                  },
+                  {
+                    value: "notordered",
+                    label: "لم يكن المنتج مطلوب في الطلب الأصلي",
+                  },
+                ],
+              });
+              questionsEl.appendChild(qABD2);
+
+              qABD2
+                .querySelectorAll('input[name="miABD2"]')
+                .forEach((ab2) => {
+                  ab2.onchange = () => {
+                    pruneNextSiblings(qABD2, "q-block");
+                    resetRequired();
+                    state.mi.abd =
+                      ab2.value === "deleted"
+                        ? "تم الحذف من الأدمن"
+                        : "لم يكن مطلوبًا";
+                    renderMiniSummary();
+
+                    if (ss.value === "ota") {
+                      if (ab2.value === "deleted") {
+                        addResult(
+                          "عرض طلب جديد ببديل مناسب (New Order). وإذا رُفِض أو لا يوجد بديل: Follow Up Order."
+                        );
+                      } else {
+                        addResult("طلب جديد بالمفقود.");
+                        addResult("ترحيل فترة واحدة.");
+                        addResult("تعليق 'خاص بشكوى'.");
+                        addResult(
+                          "تيكت: Complaint Missing Item - CC + PDF."
+                        );
+                      }
+                    } else {
+                      if (ab2.value === "deleted") {
+                        addResult(
+                          "يتم عرض طلب جديد ببديل مناسب (New Order)."
+                        );
+                        addResult(
+                          "وإذا رُفِض أو لا يوجد بديل: Follow Up Order."
+                        );
+                      } else {
+                        addResult(
+                          "يتم التوضيح للعميل أن المنتج غير مطلوب بالطلب من الأساس (من التطبيق)."
+                        );
+                        addResult(
+                          "يتم عرض طلب جديد بالمنتج الذي يريده (New Order)."
+                        );
+                        addResult(
+                          "وإذا رُفِض أو لا يوجد بديل: Follow Up Order."
+                        );
+                      }
+                    }
+                  };
+                });
+            };
+          });
+        }
+      };
+    });
+  }
+
+  // سؤال: نفس المنتج ولا منتج آخر؟ (يستخدم في Inv = نعم + دفع مسبق + مش سمك)
+  function buildSameProductQuestion() {
+    const qSame = radioQuestion({
+      title: "هل العميل يريد نفس المنتج اللي في الطلب الاساسي أم منتج آخر؟",
+      name: "miSameProd",
+      options: [
+        { value: "same", label: "نفس المنتج في الطلب الأساسي" },
+        { value: "other", label: "منتج آخر" },
+      ],
+    });
+    questionsEl.appendChild(qSame);
+
+    qSame.querySelectorAll('input[name="miSameProd"]').forEach((sp) => {
+      sp.onchange = () => {
+        pruneNextSiblings(qSame, "q-block");
+        resetRequired();
+
+        if (sp.value === "same") {
+          addResult("طلب جديد بالمفقود.");
+          addResult(
+            "لو نفس المنتج يتم اختيار نفس الوزن ويكتب الوزنه بظبط في الكومنت"
+          );
+          addResult("ترحيل فترة واحدة.");
+          addResult("تعليق 'خاص بشكوى'.");
+          addResult("تيكت: Complaint Missing Item - Delivery + PDF.");
+        } else {
+          addResult("شكوى Delivery – Complaint - Missing Item فقط.");
+        }
+      };
+    });
+  }
 }
 
 /* =========================
@@ -723,7 +911,7 @@ function buildWT(){
   clear(questionsEl); resetRequired(); show(qaCard,true);
 
   /* إظهار نفس ملحوظة المبرد/المجمد أعلى الأسئلة مثل جودة منتج */
-    renderColdNoteTopForPQ(true);
+  renderColdNoteTopForPQ(true);
 
   const step = radioQuestion({
     title:'اختر الحالة:',
